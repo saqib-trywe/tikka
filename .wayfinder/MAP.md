@@ -9,7 +9,8 @@ label: wayfinder:map
 
 A spec tight enough that a build session can execute tikka without re-deciding
 anything — domain model, persistence, the four surfaces, and the MCP tool contract —
-together with a walking skeleton proving those four surfaces run in one process.
+together with a walking skeleton proving the surfaces share one core: web UI, HTTP API
+and MCP in a single daemon process, with the CLI as a separate thin client against it.
 
 Done when wayfinder itself could be hosted on tikka: that is the acceptance test.
 
@@ -40,6 +41,12 @@ says otherwise. Research tickets call `research`. The walking skeleton calls
 - [Scope and shape settled at charting](tickets/T00-scope-and-shape.md): tikka is an
   agent-first, permanently single-user, local-only tracker with two entities, three
   edge kinds, two statuses, and a daemon that owns the store.
+- [Survey the Clojure ecosystem for tikka's four surfaces](tickets/T01-clojure-ecosystem-survey.md):
+  one alpha pure-Clojure MCP library versus conformance-tested Java-SDK interop;
+  Datalevin and SQLite both meet the atomic-claim and graph-query bar where XTDB 2 and
+  Datascript do not; and MCP-over-HTTP mounts as a Ring handler beside the web UI — but
+  sub-100ms rules the CLI out of that process, so it is three surfaces in one daemon
+  plus a separate babashka client, not four in one.
 
 ## Not yet specified
 

@@ -22,7 +22,10 @@ failure here.
 - What does each cost in build complexity and in library compatibility, given the CLI
   needs little more than HTTP and EDN/JSON?
 - Does the CLI share code with the daemon, or is duplicating a small client the honest
-  cheaper answer?
+  cheaper answer? Note the survey's constraint: babashka has a fixed set of Java classes
+  and **no runtime Java class loading**, so shared code must stay within what babashka
+  can load, or become a pod. That is a real limit on how much the CLI and daemon can
+  share, and it should be decided rather than discovered.
 - Output shape: human-readable tables by default with a `--json`-style flag for
   scripting, or structured always?
 

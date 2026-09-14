@@ -27,3 +27,10 @@ weight than a typical library pick.
   daemon is not running? Does the proxy start it, or fail with a message?
 - Does tikka expose MCP **resources** and **prompts**, or tools alone? Agent-first
   argues for at least considering resources for issue bodies.
+- **Which spec revision does tikka target, and what happens when the spec moves?** The
+  survey found the current revision is 2026-07-28 while the entire Clojure/Java field
+  sits at 2025-11-25. Spec drift is therefore a standing condition, not an edge case,
+  and the two candidate implementations differ sharply in who absorbs it: the Java SDK
+  is conformance-suite validated and will track, whereas the pure-Clojure library is
+  alpha with a single maintainer. Decide whether tikka pins a revision and accepts going
+  stale, or commits to following — and what that costs when a client demands newer.

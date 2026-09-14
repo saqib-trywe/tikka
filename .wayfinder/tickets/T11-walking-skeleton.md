@@ -11,7 +11,13 @@ blocked-by: [T03, T04, T05, T06]
 
 The one execution ticket on this map. Everything else produces decisions; this produces
 throwaway code that proves the central technical assumption before the spec is handed
-off: **four surfaces genuinely run over one core in one process.**
+off: **the surfaces genuinely share one core.**
+
+The survey already corrected the shape of that claim. Sub-100ms startup rules the CLI
+out of the daemon process, so the target is **web UI, HTTP API and MCP mounted in one
+Ring handler in a single daemon, plus a separate babashka CLI** against it — not four
+surfaces in one process. Proving that is still the point; the arrangement is just known
+now rather than assumed.
 
 Build the thinnest possible end-to-end slice. One issue type, one field beyond the id,
 no invariants, no polish:
@@ -29,7 +35,8 @@ What the prototype must answer:
 - Does the MCP transport decision from
   [Choose the MCP server implementation and transport](T04-mcp-implementation.md)
   actually survive contact with a real client, and does it coexist with a long-running HTTP server?
-- Is the "one core, four adapters" structure real, or did something force duplication?
+- Is the "one core, four adapters" structure real, or did something force duplication —
+  particularly across the daemon/babashka boundary, where shared code is constrained?
 - Where did the friction actually turn up, versus where the map predicted it would?
 
 Throwaway code. It is evidence for the spec, not the first commit of tikka — resist
