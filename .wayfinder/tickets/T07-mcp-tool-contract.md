@@ -1,0 +1,35 @@
+---
+id: T07
+title: Design the MCP tool contract
+type: grilling
+status: open
+assignee: null
+blocked-by: [T02, T03]
+---
+
+## Question
+
+The most consequential design on the map: MCP is tikka's primary interface, so this
+contract *is* the product's API.
+
+Settled already: coarse CRUD plus a small set of intent tools, ~7–8 total, where an
+intent tool is justified only by an invariant or a race it enforces — never by
+convenience. `claim_issue` (atomic compare-and-set), `close_issue` (demands resolution
+and comment) and `frontier` are the known members.
+
+What this ticket must produce:
+
+- The **full tool list** with names, argument schemas, and return shapes.
+- **Response design for an LLM reader.** How much of an issue does `get_issue` return —
+  body, comments, events, edges, all of it? Token cost is a real constraint; an agent
+  listing 40 issues must not receive 40 full bodies. What does the list/detail split
+  look like?
+- **How errors read.** An agent that loses a claim race, or trips a cycle rejection,
+  must understand what happened and what to do instead from the error alone.
+- **Whether tools are project-scoped or global**, and how an agent says which project
+  it means without being told twice.
+- Whether write tools are idempotent, and what a retry after an ambiguous failure does.
+
+Depends on [Define tikka's core invariants](T02-core-invariants.md) for the invariants
+being enforced, and [Choose the persistence engine](T03-persistence-engine.md) for what
+the store can do atomically.
