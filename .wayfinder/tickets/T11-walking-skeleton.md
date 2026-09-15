@@ -63,3 +63,9 @@ commit; retrofitting either onto a store that already holds real tickets is how 
 `TIKKA_HOME` everywhere so the skeleton's daemon never touches a real store. Service installation
 (`tikka daemon install`) can wait; `tikka daemon run` in the foreground is enough to prove the
 surfaces.
+
+**Inherited from [Shape the Laminar frontend](T05-web-ui-approach.md):**
+sbt 2 with JVM/JS/Native cross-projects and no npm. The shared module holds only the contract (types,
+tapir endpoints, circe codecs, query parser, text renderer, line diff). The daemon serves `fastLinkJS`
+output from disk in dev mode and embeds `fullLinkJS` output in the jar. Laminar 18 and Waypoint 10 milestones.
+Record the `fullLinkJS` bundle size.

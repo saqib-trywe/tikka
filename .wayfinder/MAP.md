@@ -90,16 +90,16 @@ says otherwise. Research tickets call `research`. The walking skeleton calls
   service that nothing starts implicitly; fixed configurable port; one daemon per `TIKKA_HOME` by
   lock; forward-only migrations with a snapshot first; a committed `.tikka` binding written by
   `tikka init`, which never creates projects.
+- [Shape the Laminar frontend](tickets/T05-web-ui-approach.md): sbt 2, no npm or Vite; a shared
+  module holding only the contract; ready, tree and detail views with no diagrams; project scope
+  lives in the query, not a picker; live updates that never reshuffle lists; reviewer-only edits;
+  markdown rendered by Laika with raw HTML off.
 
 ## Not yet specified
 
 - **Body and mention conventions** — how `TIK-nn` is detected in markdown without
   false positives, whether mentions are rendered as live links, and what a mention of an
   id that does not exist yet means once that issue is created.
-- **The ready/graph view** — what the web UI actually draws for blocking edges and
-  hierarchy, and whether that is a diagram or an ordered list.
-- **Multi-project UX** — how one daemon presents several projects without reintroducing
-  a project-picker workflow.
 - **Seeding the acceptance test** — actually moving this map onto tikka once it runs.
   Depends on nearly everything above.
 - **Export and durability** — whether the store can be dumped to plain files, which is

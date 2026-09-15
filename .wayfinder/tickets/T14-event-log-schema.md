@@ -102,4 +102,5 @@ compaction.
   `events_total` and `events_truncated`. Full history is over HTTP. Each event renders as a header line
   (`#1042 2026-09-15 10:02 mcp:claude-code`) plus its changes and comment. Bodies render as a unified diff,
   titles as before and after, and other fields as `field: old → new` or `+label`/`-label`, in both text and
-  `structuredContent`. The full stored text serves the UI's diff view.
+  `structuredContent`. The full stored text serves the UI's diff view. *Refined by [Shape the Laminar frontend](T05-web-ui-approach.md): one
+  line-diff implementation in the shared module serves both MCP rendering and the UI.*
