@@ -97,7 +97,7 @@ is fast-mcp-scala, and that library is ZIO-based. Everything Typelevel-native si
   for macOS, Linux and Windows. The bundled build **compiles in FTS5, R*Tree and JSON**, so
   full-text search needs no extension loading. Recursive CTEs (needed for `under:` and
   blocker transitive closure) and `UPDATE … RETURNING` are core SQLite.
-- **doobie** 1.0.0-RC13 (2026-06-12). Still RC after years, but it is the de facto Typelevel
+- **doobie** 1.0.0-RC13 (2026-06-12; *corrected by the walking skeleton: RC13 is a GitHub release only; Maven Central's latest is 1.0.0-RC12*). Still RC after years, but it is the de facto Typelevel
   JDBC layer and actively maintained. It has no SQLite-specific module; it goes through generic JDBC.
   `Update0.run` returns the affected-row count, which is the compare-and-set check for claims. Composing
   the mutation and the event insert in one `ConnectionIO` makes them a single transaction.

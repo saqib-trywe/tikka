@@ -94,6 +94,10 @@ says otherwise. Research tickets call `research`. The walking skeleton calls
   module holding only the contract; ready, tree and detail views with no diagrams; project scope
   lives in the query, not a picker; live updates that never reshuffle lists; reviewer-only edits;
   markdown rendered by Laika with raw HTML off.
+- [Walking skeleton — surfaces over one core](tickets/T11-walking-skeleton.md): the architecture holds:
+  one core under HTTP and MCP, one shared contract unchanged on JVM/JS/Native, MCP served to a real
+  Claude Code client on 2026-07-28, CLI search in 11 ms. It corrected the CLI's HTTP backend (curl, not
+  Ember) and the MCP method list.
 
 ## Not yet specified
 

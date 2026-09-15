@@ -94,3 +94,13 @@ the condition for revisiting.
 - **stdio exists only as `tikka mcp`**, a thin proxy subcommand of the native CLI for stdio-only
   clients (Claude Desktop's local config). It is built with the CLI, not the skeleton. It reads the repo's
   binding and forwards to the daemon, so no JVM process handles stdio.
+
+> **Amended by [Walking skeleton — surfaces over one core](T11-walking-skeleton.md):** the method list above is
+> incomplete for 2026-07-28. **`server/discover` is mandatory**; `ping` and `initialize` are 2025-11-25-only (a modern
+> request for them returns 404/`-32601`); modern results carry `resultType: "complete"` and `_meta` serverInfo;
+> `tools/list` and `server/discover` **require `ttlMs` and `cacheScope`**; requests mirror `MCP-Protocol-Version`,
+> `Mcp-Method` and `Mcp-Name` into headers, rejected with 400/`-32020` on mismatch; any `_meta`, or a modern version header,
+> selects the modern era, and missing required `_meta` fields is 400/`-32602`. **Drop nulls from `structuredContent`**:
+> Claude Code validates it against `outputSchema`. The released conformance suite (npm 0.1.16) predates 2026-07-28, so CI
+> runs it from GitHub `main` until a release ships. The hand-rolled adapter came to about 200 lines and passed every applicable
+> scenario at both revisions.

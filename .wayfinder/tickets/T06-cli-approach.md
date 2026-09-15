@@ -137,3 +137,10 @@ support lives entirely in the daemon and never requires rebuilding the proxy.
   packaging.
 - **macOS and Linux only.** fs2's async stdin on Native covers those two, and Windows is not wanted.
   A deliberate limit.
+
+> **Amended by [Walking skeleton — surfaces over one core](T11-walking-skeleton.md):** the HTTP backend is
+> **sttp's curl cats backend, not Ember**. Ember on Native dynamically links `s2n-tls` and `libidn2` from Homebrew even
+> for plain-HTTP localhost, so the "pure Scala, no system library" rationale was wrong. The curl backend links the OS
+> `libcurl` plus `libidn2`, which is a runtime dependency on macOS (Homebrew) and Linux. The whole shared core and
+> cats-effect stay. Measured: `tikka search` against a live daemon runs in **11.3 ms** (release) and 14.2 ms (debug); the
+> binary is 12 MB. The single-threaded-runtime and GraalVM fallbacks were not needed.

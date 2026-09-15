@@ -113,3 +113,7 @@ drift bites. Accepted cost: tapir as a second vocabulary over http4s.
   (the only real skew: a new CLI against a still-running old daemon).
 - **Browser safety:** no CORS headers at all, since the UI is same-origin. The localhost hardening from the MCP
   implementation (`127.0.0.1` only, a foreign `Origin` rejected, `Host` validated) is the whole story.
+
+> **Amended by [Walking skeleton — surfaces over one core](T11-walking-skeleton.md):** tapir's default
+> decode-failure handler answers with plain text, breaking the error contract. Install a custom handler returning the
+> `invalid_argument` error body from the first commit. Unknown `/assets/…` paths must return 404, not the SPA fallback.

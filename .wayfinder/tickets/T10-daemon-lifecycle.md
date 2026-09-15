@@ -127,3 +127,7 @@ delete it": the store is the permanent record of agents' work, and issues are ne
   `tikka init KEY --new "Name"` creates and binds in one explicit step. The binding thus lives in two files
   (`.tikka` for CLI and stdio, the MCP config URL for HTTP clients); `init` writes both, and that duplication is
   accepted.
+
+> **Amended by [Walking skeleton — surfaces over one core](T11-walking-skeleton.md):** the service unit runs the
+> daemon with `--enable-native-access=ALL-UNNAMED` (sqlite-jdbc loads native code; JDK 26 warns otherwise). The migration
+> runner must close every statement and result set before `VACUUM INTO`, and needs a test that migrates a non-empty store.
