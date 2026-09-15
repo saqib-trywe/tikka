@@ -3,7 +3,7 @@ id: T09
 title: Design the HTTP API shape
 type: grilling
 status: open
-assignee: null
+assignee: saqib
 blocked-by: [T07]
 ---
 
