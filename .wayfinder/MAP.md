@@ -98,6 +98,10 @@ says otherwise. Research tickets call `research`. The walking skeleton calls
   one core under HTTP and MCP, one shared contract unchanged on JVM/JS/Native, MCP served to a real
   Claude Code client on 2026-07-28, CLI search in 11 ms. It corrected the CLI's HTTP backend (curl, not
   Ember) and the MCP method list.
+- [Settle body and mention conventions](tickets/T15-body-and-mention-conventions.md): markdown-aware
+  detection via Laika shared by daemon and UI; code never counts; titles, bodies, comments and
+  `/i/KEY-N` links do; only existing project keys, with forward references stored; prose returned
+  verbatim to agents.
 
 ## Not yet specified
 

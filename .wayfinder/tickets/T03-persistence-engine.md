@@ -139,3 +139,8 @@ reimplement exactly the SQL worth testing.
   most of that answer.
 - No ADR: SQLite is the unsurprising choice for a local tool, and this ticket carries the
   reasoning.
+
+> **Refined by [Settle body and mention conventions](T15-body-and-mention-conventions.md):** mention edges may point
+> at issues that don't exist yet (forward references), so the mention table references a project key and number, not an
+> issue row. Titles are a mention source alongside bodies and comments, and creating a project rescans all prose for its
+> key in the same transaction.

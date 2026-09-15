@@ -133,3 +133,7 @@ Rejected fully automatic lists (you click the wrong row) and no live updates (a 
 **Laika on Scala.js renders markdown in the browser**, with raw HTML off (its default), so an agent-written
 `<script>` shows as text. The API stays pure JSON. Whether `TIK-42` in prose becomes a live link stays with the
 map's **body and mention conventions**.
+
+> **Refined by [Settle body and mention conventions](T15-body-and-mention-conventions.md):** Laika lives in a
+> JVM+JS module (it has no Scala Native build) shared by the daemon's mention detection and the UI's renderer. Mentions
+> render as status-styled links with title tooltips, ids that don't exist yet are muted, and code is never linked.

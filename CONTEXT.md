@@ -122,9 +122,17 @@ once all of them are closed.
 
 ### Mention
 
-A reference to an issue id occurring in a body or comment. Mentions are **derived**, not
-curated: writing `TIK-42` in prose creates the edge, and the mentioned issue gains a
-**backlink**. There is no way to hand-author or hand-remove a mention.
+A reference to an issue id occurring in an issue's title, body or comments. Mentions are
+**derived**, not curated: writing `TIK-42` in prose creates the edge, and the mentioned
+issue gains a **backlink**. There is no way to hand-author or hand-remove a mention.
+
+Only prose counts: an id inside code — an inline code span or a code block — is not a
+mention, so pasted logs and code don't create backlinks. An id counts only when its
+project exists; it may name an issue that doesn't exist yet, and becomes a live backlink
+when that issue is created. An issue never mentions itself.
+
+A mention reflects the current text: editing an id out of a title or body removes the
+backlink. Comments are never edited, so a mention in a comment is permanent.
 
 This is the whole of tikka's "see also". Curated link types — *relates to*, *duplicates*,
 *clones* — are deliberately absent; they go stale because nothing forces them to stay
