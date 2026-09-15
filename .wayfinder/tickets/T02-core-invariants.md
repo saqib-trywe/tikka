@@ -3,7 +3,7 @@ id: T02
 title: Define tikka's core invariants
 type: grilling
 status: open
-assignee: null
+assignee: saqib
 blocked-by: []
 ---
 

@@ -3,7 +3,7 @@ id: T13
 title: Survey the Scala ecosystem for tikka's four surfaces
 type: research
 status: open
-assignee: null
+assignee: scala-survey-2
 blocked-by: []
 ---
 
