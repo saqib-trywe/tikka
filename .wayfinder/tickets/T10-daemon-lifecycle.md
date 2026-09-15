@@ -3,7 +3,7 @@ id: T10
 title: Daemon lifecycle and repo-to-project binding
 type: grilling
 status: open
-assignee: null
+assignee: saqib
 blocked-by: [T06]
 ---
 
