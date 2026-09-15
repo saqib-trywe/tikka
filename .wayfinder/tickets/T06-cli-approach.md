@@ -144,3 +144,7 @@ support lives entirely in the daemon and never requires rebuilding the proxy.
 > `libcurl` plus `libidn2`, which is a runtime dependency on macOS (Homebrew) and Linux. The whole shared core and
 > cats-effect stay. Measured: `tikka search` against a live daemon runs in **11.3 ms** (release) and 14.2 ms (debug); the
 > binary is 12 MB. The single-threaded-runtime and GraalVM fallbacks were not needed.
+
+> **Refined by [Decide export and durability](T17-export-and-durability.md):** `tikka daemon export <file>` and
+> `tikka daemon restore <snapshot>` are daemon-jar operations that the CLI invokes, not HTTP calls. Both must work when no
+> daemon is running.

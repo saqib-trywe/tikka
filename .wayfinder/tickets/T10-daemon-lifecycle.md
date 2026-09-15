@@ -131,3 +131,8 @@ delete it": the store is the permanent record of agents' work, and issues are ne
 > **Amended by [Walking skeleton — surfaces over one core](T11-walking-skeleton.md):** the service unit runs the
 > daemon with `--enable-native-access=ALL-UNNAMED` (sqlite-jdbc loads native code; JDK 26 warns otherwise). The migration
 > runner must close every statement and result set before `VACUUM INTO`, and needs a test that migrates a non-empty store.
+
+> **Refined by [Decide export and durability](T17-export-and-durability.md):** the daemon writes daily `VACUUM INTO`
+> snapshots (at startup and every 24 h; 7 kept, migration snapshots kept indefinitely) and runs `PRAGMA quick_check` on the store at
+> startup and on each snapshot. `tikka daemon export <file>` (JSON Lines, offline, read-only) and `tikka daemon restore
+> <snapshot>` (daemon stopped, lock taken, current store moved aside) join the `daemon` subcommands.

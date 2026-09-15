@@ -105,6 +105,9 @@ says otherwise. Research tickets call `research`. The walking skeleton calls
 - [Confirm wayfinder fits tikka's contract](tickets/T16-wayfinder-fits-tikka.md): every wayfinder
   operation maps onto the contract; the one gap, same-developer parallel sessions, is closed by
   session-named assignees plus `assignee:` prefix matching.
+- [Decide export and durability](tickets/T17-export-and-durability.md): offline JSON Lines export from
+  the daemon jar; no import; daily self-snapshots with 7 kept; restore that never deletes;
+  `quick_check` at startup and on every snapshot.
 
 ## Not yet specified
 
