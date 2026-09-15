@@ -97,9 +97,6 @@ says otherwise. Research tickets call `research`. The walking skeleton calls
 
 ## Not yet specified
 
-- **Body and mention conventions** — how `TIK-nn` is detected in markdown without
-  false positives, whether mentions are rendered as live links, and what a mention of an
-  id that does not exist yet means once that issue is created.
 - **Seeding the acceptance test** — actually moving this map onto tikka once it runs.
   Depends on nearly everything above.
 - **Export and durability** — whether the store can be dumped to plain files, which is

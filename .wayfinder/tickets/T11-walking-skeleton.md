@@ -69,3 +69,7 @@ sbt 2 with JVM/JS/Native cross-projects and no npm. The shared module holds only
 tapir endpoints, circe codecs, query parser, text renderer, line diff). The daemon serves `fastLinkJS`
 output from disk in dev mode and embeds `fullLinkJS` output in the jar. Laminar 18 and Waypoint 10 milestones.
 Record the `fullLinkJS` bundle size.
+
+**Scoped 2026-09-15:** mention detection is **out of the skeleton**. It proves four surfaces over
+one core, which mentions don't test. The store keeps a place for mention edges, left empty.
+Detection rules are [Settle body and mention conventions](T15-body-and-mention-conventions.md).
