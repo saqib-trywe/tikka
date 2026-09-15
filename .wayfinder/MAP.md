@@ -79,6 +79,9 @@ says otherwise. Research tickets call `research`. The walking skeleton calls
   JSON-RPC over http4s at `/mcp`, JSON-only, speaking the current and previous spec revisions with
   the conformance suite in CI; stdio only via a CLI proxy; localhost hardened against foreign
   origins. See [ADR 0002](../docs/adr/0002-hand-rolled-mcp.md).
+- [Design the HTTP API shape](tickets/T09-http-api-shape.md): MCP and HTTP are thin adapters over
+  one core; REST for CRUD with POST intent actions; tapir endpoints shared across daemon, UI and
+  CLI also derive the MCP schemas; JSON only, three statuses, a resumable SSE event stream.
 
 ## Not yet specified
 

@@ -50,3 +50,10 @@ live updates have a natural source, a global event sequence the client can resum
 timeline has full before/after text for titles and bodies, so the diff view is rendered client-side.
 An event can appear on several timelines (subject, edge counterparts, unblocked dependents),
 so the UI should show which issue a related event was actually written to.
+
+**Inherited from [Design the HTTP API shape](T09-http-api-shape.md):**
+the API client question is settled: tapir endpoints in the shared module give the UI a typed
+sttp client. The daemon serves `index.html` for any path outside `/api`, `/mcp` and static assets,
+so SPA routes like `/i/TIK-42` work as deep links. The API is JSON only. An SSE stream
+(`/api/events/stream`, resumable via `Last-Event-ID`) exists; whether the UI goes live is still
+yours. The UI sends no `Tikka-Project` header, and multi-project UX stays unmapped.

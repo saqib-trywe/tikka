@@ -52,3 +52,9 @@ the CLI carries `tikka mcp`, a stdio-to-HTTP proxy for stdio-only MCP clients: n
 JSON-RPC on stdin forwarded to the daemon's `/mcp` with the repo's binding applied. On Scala Native the
 cats-effect runtime is documented as single-threaded, with no blocking pool, so reading stdin must not block the
 only thread. Verify how fs2-io reads stdin on Native before committing to cats-effect here.
+
+**Inherited from [Design the HTTP API shape](T09-http-api-shape.md):**
+the CLI's HTTP client is the tapir-derived sttp client from the shared module, so the endpoint
+definitions must build for Scala Native. It sends `Tikka-Project` from the repo binding, calls
+`GET /api/meta` to warn on a daemon version mismatch, and switches on the error body's `error`
+code (statuses are only 404/400/409).

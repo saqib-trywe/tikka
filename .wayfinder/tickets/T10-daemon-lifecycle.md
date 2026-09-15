@@ -51,3 +51,8 @@ create and search all projects. Creating a project is a human act through the CL
 decide what `tikka mcp` (the stdio proxy) does when no daemon is listening. MCP sessions on the
 2025-11-25 lifecycle are in-memory and lost on restart (clients re-initialize), so restarts are
 cheap for MCP. The daemon binds `127.0.0.1` only.
+
+**Inherited from [Design the HTTP API shape](T09-http-api-shape.md):**
+the CLI sends the binding as a `Tikka-Project` header and warns when `GET /api/meta` reports a
+daemon version different from its own; decide whether that warning ever becomes an automatic
+restart.

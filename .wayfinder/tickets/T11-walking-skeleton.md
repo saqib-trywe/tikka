@@ -44,3 +44,9 @@ What the prototype must answer:
 
 Throwaway code. Evidence for the spec, not the first commit of tikka — resist growing it
 into the product.
+
+**Inherited from [Design the HTTP API shape](T09-http-api-shape.md):**
+the skeleton proves one core under two adapters: tapir endpoints in a cross-compiled shared module,
+interpreted to http4s on the daemon and to sttp clients on Scala.js and Scala Native, with tapir
+`Schema` also feeding the hand-rolled MCP layer's tool schemas. If tapir's Native or JS client
+does not build, that is the finding.
