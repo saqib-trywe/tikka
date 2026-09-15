@@ -1,0 +1,15 @@
+# Build output
+target/
+.bsp/
+project/project/
+node_modules/
+
+# Editors
+.metals/
+.bloop/
+.idea/
+.vscode/
+.DS_Store
+
+# Scratch TIKKA_HOME directories used while testing by hand
+tmp/

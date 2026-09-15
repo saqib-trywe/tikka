@@ -24,8 +24,9 @@ The build starts clean, reusing ideas and patterns rather than files.
 ### M0: Scaffold and CI
 
 sbt 2 cross-build: `shared` (JVM/JS/Native: the contract), `prose` (JVM/JS: Laika-based mention detection and rendering),
-`core` and `daemon` (JVM), `ui` (JS), `cli` (Native). munit and scalafmt. GitHub Actions compiles and tests on all three
-platforms, links the Native CLI and runs the startup gate, and runs the MCP conformance suite from GitHub `main`.
+`core` and `daemon` (JVM), `ui` (JS), `cli` (JVM/Native). munit and scalafmt. GitHub Actions compiles and tests on all three
+platforms, links the Native CLI and runs the startup gate, and installs the pinned MCP conformance suite (its scenarios run
+from M3).
 
 Implements: Shape the Laminar frontend; Choose the CLI approach; ADR 0002. Heed the skeleton's sbt 2 findings (`%%`, no
 `%%%`; virtual classpaths; `;`-joined batch commands; pinned `/usr/bin/clang`).
