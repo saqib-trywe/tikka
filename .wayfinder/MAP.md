@@ -68,15 +68,16 @@ says otherwise. Research tickets call `research`. The walking skeleton calls
   hand-written SQL; readable in `sqlite3` without tikka; one serialized writer with every commit
   synced; graph invariants checked in code inside the transaction; derived state never stored
   except mentions; substring text search; decimal ranks.
+- [Design the MCP tool contract](tickets/T07-mcp-tool-contract.md): nine tools, with no
+  ready, comment, project, batch or delete tools; comments ride on writes; rejections are
+  `isError` results naming the conflict with the facts to act on; compact rows, never bodies, in
+  lists; a connection's project binding lives in its MCP config.
 
 ## Not yet specified
 
 - **Body and mention conventions** — how `TIK-nn` is detected in markdown without
   false positives, whether mentions are rendered as live links, and what a mention of an
   id that does not exist yet means once that issue is created.
-- **MCP failure semantics** — rejections name their conflict (settled with the
-  invariants); still open is the machine-readable shape of that error, and whether an
-  agent gets a suggested next step. Waits on the MCP tool contract.
 - **The ready/graph view** — what the web UI actually draws for blocking edges and
   hierarchy, and whether that is a diagram or an ordered list.
 - **Multi-project UX** — how one daemon presents several projects without reintroducing

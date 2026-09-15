@@ -36,3 +36,10 @@ in the same transaction as the mutation, timestamps from the daemon clock, and a
 
 Read [Choose the persistence engine](T03-persistence-engine.md) and
 [Define tikka's core invariants](T02-core-invariants.md) first.
+
+**Inherited from [Design the MCP tool contract](T07-mcp-tool-contract.md):**
+no write carries an actor argument; the actor comes from the connection (surface plus client
+name), and parallel sessions often share a client name. If events need more, argue it here and
+reopen that decision. Claim, release and reassign are distinct operations and should read as such.
+Every write can carry a comment appended in the same transaction; close and reopen always do.
+`get_issue` returns events only on request.

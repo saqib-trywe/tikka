@@ -41,3 +41,8 @@ the store is one SQLite file under `~/.tikka/`, opened in WAL mode with a single
 so a second daemon on the same file would contend for the writer; decide how it is refused
 (a lock file, or the port). Schema upgrades are yours; SQLite's `user_version` pragma makes a
 migration runner cheap if you want one.
+
+**Inherited from [Design the MCP tool contract](T07-mcp-tool-contract.md):**
+an MCP connection is bound by its endpoint URL (`…/mcp?project=TIK`); the stdio proxy
+(`tikka mcp`) reads the repo's binding and applies it. Unbound connections require `project` on
+create and search all projects. Creating a project is a human act through the CLI or web, never MCP.

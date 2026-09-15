@@ -32,3 +32,9 @@ primary, so HTTP is designed against it rather than the reverse.
 **Inherited from [Define the shared query and filter grammar](T08-query-grammar.md):**
 listing takes one `?q=` parameter in the shared syntax and returns an opaque next cursor.
 No per-filter query parameters.
+
+**Inherited from [Design the MCP tool contract](T07-mcp-tool-contract.md):**
+the MCP contract is the product's API; the HTTP API should mirror its nine operations, argument
+names, row/detail split and error codes rather than invent a parallel vocabulary. Open here is
+only the HTTP projection: routes and verbs, status codes per error code, and how the bound
+project reaches the daemon from the CLI.

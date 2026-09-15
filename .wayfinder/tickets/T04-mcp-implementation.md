@@ -44,3 +44,9 @@ transports are servlet-based, so http4s needs a hand-written transport. chimp's 
 cover cats-effect. The only 2026-07-28 implementation, fast-mcp-scala, is ZIO. Streamable HTTP lets
 Claude Code connect to the daemon directly; stdio-only clients need a proxy, which the native CLI can
 provide.
+
+**Inherited from [Design the MCP tool contract](T07-mcp-tool-contract.md):**
+nine tools, tools only (no resources or prompts). The implementation must support `outputSchema` and
+`structuredContent` next to a text block, and domain errors as `isError` results. It must read a
+project binding from the endpoint URL (`…/mcp?project=TIK`) and derive the actor from the
+connection. Weigh candidate libraries against those requirements.

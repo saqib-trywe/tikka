@@ -12,6 +12,12 @@ else.
 A project's key is permanent and a project is never removed: the key is part of every
 issue id ever issued. Its display name is just a label and may change.
 
+### Bound project
+
+The project a working context means when it names none — a repository directory, or an
+agent's connection to tikka. Binding is set once, outside any conversation. Naming a
+project explicitly always overrides it; with no binding, nothing is assumed.
+
 ## Issue
 
 The unit of work, and the only substantial entity in tikka. An issue has a title, a
@@ -42,7 +48,7 @@ progress. This is a deliberate refusal — a stored in-progress flag can drift o
 agreement with the assignee, and a derived one cannot.
 
 **Reopening** returns a closed issue to open, discarding its resolution (the timeline
-keeps it).
+keeps it). Like closing, it always carries a comment saying why.
 
 Issues are never deleted. Closing as `dropped` is the only way out, including for issues
 created by mistake.
@@ -56,6 +62,9 @@ the scope of the effort).
 The distinction matters because "we finished this" and "we decided not to" are different
 facts about the route taken, and a single closed status loses the difference.
 
+Closing always carries a comment saying why. A resolution records *what* happened; the
+comment records the reasoning a later reader will need.
+
 ## Assignee
 
 Free text naming whoever or whatever holds the issue. Not a reference to a user entity —
@@ -65,7 +74,8 @@ tikka has no users. An agent session and a human are the same kind of thing here
 
 Taking an issue by setting its assignee, conditional on it having none. A claim
 **fails** rather than overwrites when the issue is already assigned, which is what makes
-it safe for concurrent sessions to race for the same work.
+it safe for concurrent sessions to race for the same work. Claiming an issue you already
+hold is not a conflict: it succeeds and changes nothing.
 
 An open issue with no assignee is **unclaimed**.
 
@@ -79,6 +89,9 @@ who holds it now:
 A **stale claim** is one held long enough that its holder has probably gone — typically an
 agent session that ended mid-work. Claims never lapse on their own; a stale claim stays
 until someone reassigns it.
+
+A closed issue's assignee is history — the record of who resolved it — so a closed issue
+cannot be claimed, released or reassigned. Reopen it first if the work is live again.
 
 ## Comment
 
