@@ -3,7 +3,7 @@ id: T07
 title: Design the MCP tool contract
 type: grilling
 status: open
-assignee: null
+assignee: saqib
 blocked-by: [T02, T03]
 ---
 
