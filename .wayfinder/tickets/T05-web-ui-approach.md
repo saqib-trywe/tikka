@@ -44,3 +44,9 @@ tapir-sttp-client4 publishes for Scala.js, so shared endpoint definitions give a
 Laminar stable is 17.2.1 (2025-03) and the active line is 18.0.0-M5, with Waypoint 10.0.0-M7; pick
 one deliberately. vite-plugin-scalajs has had no release since 2025-08-04. circe and jsoniter-scala
 both cross-compile, but bundle sizes are unmeasured; measure in the skeleton. http4s-dom has stalled.
+
+**Inherited from [Define the event log schema](T14-event-log-schema.md):**
+live updates have a natural source, a global event sequence the client can resume from. The
+timeline has full before/after text for titles and bodies, so the diff view is rendered client-side.
+An event can appear on several timelines (subject, edge counterparts, unblocked dependents),
+so the UI should show which issue a related event was actually written to.

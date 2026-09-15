@@ -72,6 +72,9 @@ says otherwise. Research tickets call `research`. The walking skeleton calls
   ready, comment, project, batch or delete tools; comments ride on writes; rejections are
   `isError` results naming the conflict with the facts to act on; compact rows, never bodies, in
   lists; a connection's project binding lives in its MCP config.
+- [Define the event log schema](tickets/T14-event-log-schema.md): one write is one event holding
+  field changes and its comment; events also land on edge counterparts and unblocked dependents
+  but never on mentioned issues; a global sequence orders them and feeds live updates over HTTP.
 
 ## Not yet specified
 

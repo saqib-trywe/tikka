@@ -38,3 +38,9 @@ the MCP contract is the product's API; the HTTP API should mirror its nine opera
 names, row/detail split and error codes rather than invent a parallel vocabulary. Open here is
 only the HTTP projection: routes and verbs, status codes per error code, and how the bound
 project reaches the daemon from the CLI.
+
+**Inherited from [Define the event log schema](T14-event-log-schema.md):**
+the HTTP API exposes a cross-issue event feed ordered by a global sequence ("events after N"),
+which MCP does not have; decide whether it is a paged endpoint, an SSE stream, or both, and how
+a client resumes after a disconnect. Full issue history (beyond MCP's latest 50) and full
+before/after text for prose changes are served here.

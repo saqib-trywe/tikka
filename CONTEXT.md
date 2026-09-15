@@ -154,6 +154,17 @@ what. Events accumulate and are never edited or removed, forming an issue's **ti
 An issue's current state is the authority on what is true now; the timeline is the record
 of how it got there. They are separate on purpose.
 
+One write is one event, however many fields it changes; a comment given with the write
+belongs to that event. A write that changes nothing records no event.
+
+An event belongs to the issue written to, and also appears on the timeline of every issue
+whose parent or blocking edges it changed, or that it unblocked or blocked again — closing
+a blocker shows on each dependent it frees. A **mention** does not carry an event onto the
+mentioned issue — the backlink appears, the timeline stays quiet.
+
+The event names **who** by the surface and client that made the write (an agent through
+MCP, the CLI, the web UI), not by a person.
+
 An issue's **updated** time is the time of the latest event on its timeline — a comment or
 a claim updates an issue as much as a title change does.
 
