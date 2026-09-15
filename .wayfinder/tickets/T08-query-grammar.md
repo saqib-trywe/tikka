@@ -3,7 +3,7 @@ id: T08
 title: Define the shared query and filter grammar
 type: grilling
 status: open
-assignee: null
+assignee: saqib
 blocked-by: [T02]
 ---
 
