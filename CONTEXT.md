@@ -74,6 +74,10 @@ comment records the reasoning a later reader will need.
 Free text naming whoever or whatever holds the issue. Not a reference to a user entity —
 tikka has no users. An agent session and a human are the same kind of thing here.
 
+The assignee names the *holder*, which for parallel work is a session, not a person: two
+sessions driven by the same developer claim as distinct names (`saqib/wf-7f3a`). A name shared
+between concurrent holders defeats the claim, since claiming what you already hold succeeds.
+
 ## Claim
 
 Taking an issue by setting its assignee, conditional on it having none. A claim

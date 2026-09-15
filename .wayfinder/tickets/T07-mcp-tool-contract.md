@@ -170,3 +170,8 @@ This resolves the map's unmapped item **MCP failure semantics**.
 > **Refined by [Settle body and mention conventions](T15-body-and-mention-conventions.md):** titles are a mention
 > source too, and a mention may name an issue that doesn't exist yet (listed in `get_issue` only once it exists). Prose is
 > always returned verbatim, never decorated, so `body_edits` round-trips exactly.
+
+> **Amended by [Confirm wayfinder fits tikka's contract](T16-wayfinder-fits-tikka.md):** the `claim_issue`,
+> `release_issue` and `reassign_issue` descriptions tell agents that the assignee must name their **session**, not just their
+> person (e.g. `saqib/wf-7f3a`). Two concurrent sessions sharing a name would both "claim" successfully, because claiming what
+> you hold is idempotent.

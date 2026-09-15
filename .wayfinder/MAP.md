@@ -102,6 +102,9 @@ says otherwise. Research tickets call `research`. The walking skeleton calls
   detection via Laika shared by daemon and UI; code never counts; titles, bodies, comments and
   `/i/KEY-N` links do; only existing project keys, with forward references stored; prose returned
   verbatim to agents.
+- [Confirm wayfinder fits tikka's contract](tickets/T16-wayfinder-fits-tikka.md): every wayfinder
+  operation maps onto the contract; the one gap, same-developer parallel sessions, is closed by
+  session-named assignees plus `assignee:` prefix matching.
 
 ## Not yet specified
 

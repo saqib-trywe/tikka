@@ -134,3 +134,7 @@ names the token and suggests valid alternatives. A silently ignored typo returns
 issues with no signal — the worst failure mode for an agent. An empty query is valid and
 matches everything in scope. An `id:` that does not exist matches nothing rather than
 erroring.
+
+> **Amended by [Confirm wayfinder fits tikka's contract](T16-wayfinder-fits-tikka.md):** `assignee:` accepts a
+> trailing `*` prefix match, like `label:`, so `assignee:saqib/*` finds every session claim of one person. `none` and `any`
+> are unchanged.
