@@ -3,7 +3,7 @@ id: T17
 title: Decide export and durability
 type: grilling
 status: open
-assignee: null
+assignee: saqib
 blocked-by: []
 ---
 
