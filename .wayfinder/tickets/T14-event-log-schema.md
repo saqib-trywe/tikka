@@ -3,7 +3,7 @@ id: T14
 title: Define the event log schema
 type: grilling
 status: open
-assignee: null
+assignee: saqib
 blocked-by: [T03]
 ---
 
