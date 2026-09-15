@@ -105,11 +105,7 @@ says otherwise. Research tickets call `research`. The walking skeleton calls
 
 ## Not yet specified
 
-- **Seeding the acceptance test** — actually moving this map onto tikka once it runs.
-  Depends on nearly everything above.
-- **Export and durability** — whether the store can be dumped to plain files, which is
-  the answer to "what if the daemon won't start." The store is already readable in `sqlite3`, and
-  `VACUUM INTO` gives an atomic snapshot; what is open is whether that suffices.
+Nothing currently: every in-scope question is a ticket or a decision.
 
 ## Out of scope
 
@@ -122,5 +118,8 @@ says otherwise. Research tickets call `research`. The walking skeleton calls
 - The refused feature set, in full: configurable workflows, custom fields, sprints and
   boards, estimates, time tracking, notifications, dashboards, plugins, attachments,
   epics/versions/components, and a query language (JQL or otherwise).
+- Seeding the acceptance test (actually moving this map onto a running tikka): that happens after the product is built,
+  past this map's destination of a spec plus a skeleton. Before hand-off, [Confirm wayfinder fits tikka's
+  contract](tickets/T16-wayfinder-fits-tikka.md) checks the same thing on paper.
 - Curated issue-link types — "relates to", "duplicates", "clones", "causes". Derived
   mentions cover the need; curated links go stale.
