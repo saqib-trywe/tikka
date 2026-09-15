@@ -16,14 +16,17 @@ Done when wayfinder itself could be hosted on tikka: that is the acceptance test
 
 ## Notes
 
-**Domain.** Tikka is a JIRA-like work management system in Clojure, deliberately
-simpler, for local single-user use. Four surfaces over one core: web UI, CLI, HTTP
-API, MCP server. Vocabulary lives in [CONTEXT.md](../CONTEXT.md) — read it before
-using any domain term.
+**Domain.** Tikka is a JIRA-like work management system, deliberately simpler, for
+local single-user use. Four surfaces over one core: web UI, CLI, HTTP API, MCP server.
+Vocabulary lives in [CONTEXT.md](../CONTEXT.md) — read it before using any domain term.
+
+**Stack.** Scala 3, Typelevel (cats-effect, http4s, fs2, circe), Laminar for the web UI.
+See [ADR 0001](../docs/adr/0001-scala-with-typelevel-stack.md).
 
 **Skills.** Every session calls `grilling` and `domain-modeling` unless the ticket
 says otherwise. Research tickets call `research`. The walking skeleton calls
-`prototype`.
+`prototype`. The `direct-style-scala` skill auto-loads for Scala work but is
+**overridden** here — follow [CLAUDE.md](../CLAUDE.md), not its Ox/Tapir mandate.
 
 **Standing preferences.**
 
@@ -42,11 +45,12 @@ says otherwise. Research tickets call `research`. The walking skeleton calls
   agent-first, permanently single-user, local-only tracker with two entities, three
   edge kinds, two statuses, and a daemon that owns the store.
 - [Survey the Clojure ecosystem for tikka's four surfaces](tickets/T01-clojure-ecosystem-survey.md):
-  one alpha pure-Clojure MCP library versus conformance-tested Java-SDK interop;
-  Datalevin and SQLite both meet the atomic-claim and graph-query bar where XTDB 2 and
-  Datascript do not; and MCP-over-HTTP mounts as a Ring handler beside the web UI — but
-  sub-100ms rules the CLI out of that process, so it is three surfaces in one daemon
-  plus a separate babashka client, not four in one.
+  *superseded by the move to Scala.* Two conclusions outlive it: the official Java MCP
+  SDK is the conformance-tested JVM path, and JVM startup rules the CLI out of the daemon
+  process.
+- [Adopt Scala with the Typelevel stack](tickets/T12-adopt-scala.md): Scala 3 with
+  cats-effect, http4s, fs2 and circe, plus Laminar — deliberately overriding the
+  installed direct-style skill, with the MCP-bridge and CLI-startup costs accepted.
 
 ## Not yet specified
 

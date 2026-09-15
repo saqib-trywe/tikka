@@ -4,7 +4,7 @@ title: Choose the MCP server implementation and transport
 type: grilling
 status: open
 assignee: null
-blocked-by: [T01]
+blocked-by: [T13]
 ---
 
 ## Question
@@ -12,25 +12,26 @@ blocked-by: [T01]
 How does tikka speak MCP, and over what transport?
 
 Since MCP is the *primary* interface rather than a bolt-on, this choice carries more
-weight than a typical library pick.
+weight than a typical library pick — and on the Typelevel stack it is also where the
+costs accepted in [ADR 0001](../../docs/adr/0001-scala-with-typelevel-stack.md) land.
 
-- **Implementation**: a Clojure MCP library, interop with the official Java SDK, or
-  hand-rolled JSON-RPC? Read
-  [Survey the Clojure ecosystem for tikka's four surfaces](T01-clojure-ecosystem-survey.md)
-  for what exists and how actively it is maintained. Weigh how much of the protocol each covers against how
-  much of it tikka actually needs.
-- **Transport**: stdio or HTTP. This is the harder half. Clients commonly launch an MCP
-  server as a stdio subprocess, but tikka's store is owned by a long-running daemon —
-  so either the stdio process is a thin client proxying to the daemon over HTTP, or the
-  daemon serves MCP over HTTP directly and the client connects to it.
-- **Consequence to settle explicitly**: if stdio is a proxy, what happens when the
-  daemon is not running? Does the proxy start it, or fail with a message?
-- Does tikka expose MCP **resources** and **prompts**, or tools alone? Agent-first
-  argues for at least considering resources for issue bodies.
-- **Which spec revision does tikka target, and what happens when the spec moves?** The
-  survey found the current revision is 2026-07-28 while the entire Clojure/Java field
-  sits at 2025-11-25. Spec drift is therefore a standing condition, not an edge case,
-  and the two candidate implementations differ sharply in who absorbs it: the Java SDK
-  is conformance-suite validated and will track, whereas the pure-Clojure library is
-  alpha with a single maintainer. Decide whether tikka pins a revision and accepts going
-  stale, or commits to following — and what that costs when a client demands newer.
+- **Implementation.** A Scala-native MCP library if one credibly exists, interop with
+  the official Java SDK, or hand-rolled JSON-RPC over http4s. The Java SDK is
+  conformance-tested but Reactor-based, so reaching cats-effect means an
+  `fs2-reactive-streams` bridge sitting on the primary interface. Hand-rolled JSON-RPC
+  with circe avoids the bridge but makes tikka own protocol conformance. Read
+  [Survey the Scala ecosystem for tikka's four surfaces](T13-scala-ecosystem-survey.md).
+- **Transport.** Streamable HTTP mounted as http4s routes in the daemon, or stdio. The
+  store is owned by a long-running daemon, so stdio means a thin proxy process forwarding
+  to it. Claude Code connects to a local HTTP endpoint directly
+  (`claude mcp add --transport http`), which may make stdio unnecessary for the first
+  customer — decide whether any required client forces it.
+- **If stdio is kept:** blocking stdin reads inside a cats-effect runtime must be
+  confined to the blocking pool or they starve compute threads. And what happens when
+  the daemon is not running — does the proxy start it, or fail with a message?
+- **Resources and prompts**, or tools alone? Agent-first argues for at least considering
+  resources for issue bodies.
+- **Spec revision targeting.** The current MCP revision is 2026-07-28 while the JVM
+  field lags at 2025-11-25, so spec drift is a standing condition. Does tikka pin a
+  revision and accept going stale, or commit to following — and who absorbs the drift
+  under each implementation choice?

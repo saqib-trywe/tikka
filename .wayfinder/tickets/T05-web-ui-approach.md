@@ -1,31 +1,35 @@
 ---
 id: T05
-title: Choose the web UI approach
+title: Shape the Laminar frontend
 type: grilling
 status: open
 assignee: null
-blocked-by: [T01]
+blocked-by: [T13]
 ---
 
 ## Question
 
-How is the web UI built?
+Laminar is decided — see [Adopt Scala with the Typelevel stack](T12-adopt-scala.md). The
+open question is how the frontend is structured around it.
 
-The scope decision already made narrows this a lot: the UI is a **reading and
-reviewing** surface — lists, filters, issue detail, a frontier/graph view, the event
-timeline — plus light inline edits. It is explicitly not a form-heavy authoring tool.
-A read-first UI with a handful of small mutations is the best possible case for
-server-rendered HTML with progressive enhancement, and the worst possible justification
-for an SPA build pipeline.
+The UI's job is already fixed: a **reading and reviewing** surface — lists, filters,
+issue detail, a frontier/graph view, the event timeline — plus light inline edits.
+Explicitly not a form-heavy authoring tool. Every structural choice below should be
+judged against that narrow job, not against what a general-purpose SPA would want.
 
-So the real question is whether anything about tikka defeats that default:
-
-- Does the frontier/graph view need genuine client-side interactivity (pan, zoom,
-  drag), or does a server-rendered diagram suffice?
-- Does the UI need to update live as agents mutate state underneath the viewer? If yes,
-  that implies a push channel and changes the answer.
-- What is the honest toolchain cost of each option for a solo local tool, counting
-  every build step you would have to keep working a year from now?
-
-Read [Survey the Clojure ecosystem for tikka's four surfaces](T01-clojure-ecosystem-survey.md)
-for the options and their maturity.
+- **Shared code.** Which modules cross-compile between JVM and Scala.js — domain types
+  only, or also the query/filter grammar and validation? This is the reason Laminar was
+  chosen, so it should be decided deliberately rather than grown.
+- **API client.** Hand-written fetch calls against the HTTP API, or endpoint definitions
+  shared with the server (e.g. via tapir) generating a typed client? The latter makes
+  server/client drift a compile error, at the cost of pulling tapir into an http4s stack.
+- **JSON codec** that cross-compiles, and its bundle-size cost on Scala.js.
+- **Build toolchain.** sbt, scala-cli or mill, plus Vite for dev serving — and how the
+  daemon serves the built assets in production. Count every build step you would still
+  have to keep working a year from now.
+- **Live updates.** Does the UI update as agents mutate state underneath the viewer? If
+  yes, that means a push channel (SSE over http4s via fs2), which changes the API design.
+- **Graph view.** Does the frontier/graph view need a JS diagramming library via
+  Scala.js facades, or does a Laminar-rendered ordered list carry it?
+- **Routing** within the SPA, and whether issue URLs (`/i/TIK-42`) are served by the
+  daemon directly so links from agents and CLI output open correctly.

@@ -34,6 +34,13 @@ this one unblocks.
 
 ## Resolution
 
+> **Superseded 2026-09-14.** Tikka moved from Clojure to Scala 3 before any product
+> code existed — see [Adopt Scala with the Typelevel stack](T12-adopt-scala.md). The
+> library findings below no longer apply. Two conclusions survive the language change
+> and are still load-bearing: the official Java MCP SDK remains the conformance-tested
+> JVM path (tikka is still on the JVM), and the measured JVM startup floor still rules
+> the CLI out of the daemon process. Retained as the record of the route walked.
+
 Surveyed 2026-09-14. Landscape below; the decisions it feeds remain open.
 
 ### 1. MCP on Clojure/JVM

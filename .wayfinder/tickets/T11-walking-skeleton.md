@@ -1,6 +1,6 @@
 ---
 id: T11
-title: Walking skeleton — four surfaces, one process
+title: Walking skeleton — surfaces over one core
 type: prototype
 status: open
 assignee: null
@@ -13,31 +13,34 @@ The one execution ticket on this map. Everything else produces decisions; this p
 throwaway code that proves the central technical assumption before the spec is handed
 off: **the surfaces genuinely share one core.**
 
-The survey already corrected the shape of that claim. Sub-100ms startup rules the CLI
-out of the daemon process, so the target is **web UI, HTTP API and MCP mounted in one
-Ring handler in a single daemon, plus a separate babashka CLI** against it — not four
-surfaces in one process. Proving that is still the point; the arrangement is just known
-now rather than assumed.
+The target arrangement: **HTTP API, Laminar assets and MCP served by one http4s server in
+a single daemon**, plus a **separate native CLI** against its HTTP API. The JVM startup
+floor rules the CLI out of the daemon process, so this is not four surfaces in one
+process — proving the arrangement above is still the point.
 
-Build the thinnest possible end-to-end slice. One issue type, one field beyond the id,
-no invariants, no polish:
+Build the thinnest end-to-end slice. One issue, one field beyond the id, no invariants,
+no polish:
 
-- The daemon starts and holds the chosen store.
+- The daemon starts on cats-effect and holds the chosen store.
 - Create an issue via the **CLI**, and measure real startup time against the budget set
   in [Choose the CLI approach](T06-cli-approach.md).
-- See it in the **web UI**.
+- See it in the **Laminar UI**, using the shared cross-compiled domain type.
 - Read it back over the **HTTP API**.
-- Read it over **MCP** from a real MCP client, not a test harness — this is the leg most
-  likely to break, and a mock would prove nothing.
+- Read it over **MCP** from a real MCP client, not a test harness — the leg most likely to
+  break, and a mock would prove nothing.
 
 What the prototype must answer:
 
-- Does the MCP transport decision from
-  [Choose the MCP server implementation and transport](T04-mcp-implementation.md)
-  actually survive contact with a real client, and does it coexist with a long-running HTTP server?
-- Is the "one core, four adapters" structure real, or did something force duplication —
-  particularly across the daemon/babashka boundary, where shared code is constrained?
-- Where did the friction actually turn up, versus where the map predicted it would?
+- Does the transport and implementation from
+  [Choose the MCP server implementation and transport](T04-mcp-implementation.md) survive
+  contact with a real client — in particular, does any Reactor bridge behave under
+  cats-effect cancellation?
+- Is "one core, many adapters" real, or did something force duplication — across the
+  JVM/Scala.js boundary, or across the JVM/native-CLI boundary?
+- Did either revisit condition in [ADR 0001](../../docs/adr/0001-scala-with-typelevel-stack.md)
+  trigger: a disproportionately painful MCP bridge, or a CLI that can only hit its startup
+  budget by abandoning the shared core?
+- Where did the friction actually turn up, versus where the map predicted?
 
-Throwaway code. It is evidence for the spec, not the first commit of tikka — resist
-growing it into the product.
+Throwaway code. Evidence for the spec, not the first commit of tikka — resist growing it
+into the product.

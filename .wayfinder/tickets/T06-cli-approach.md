@@ -4,30 +4,32 @@ title: Choose the CLI approach
 type: grilling
 status: open
 assignee: null
-blocked-by: [T01]
+blocked-by: [T13]
 ---
 
 ## Question
 
 How is the CLI built and distributed?
 
-The CLI is a thin HTTP client to the daemon with full CRUD, so its logic is trivial.
-The entire decision is **startup time**: a command-line client that takes a second to
-print a list of issues will not get used, and JVM startup is the classic Clojure
-failure here.
+The CLI is a thin HTTP client to the daemon with full CRUD, so its logic is trivial. The
+decision is **startup time**: a CLI that takes a second to list issues will not get used.
+The JVM startup floor is disqualifying on its own, so the CLI cannot be a plain JVM
+process — this much survived from the Clojure survey.
 
-- What is the startup budget? (Sub-100ms is the bar for a tool that feels instant.)
-- Which approach hits it — a Babashka script, a GraalVM native-image binary, or a JVM
-  uberjar with a persistent process?
-- What does each cost in build complexity and in library compatibility, given the CLI
-  needs little more than HTTP and EDN/JSON?
-- Does the CLI share code with the daemon, or is duplicating a small client the honest
-  cheaper answer? Note the survey's constraint: babashka has a fixed set of Java classes
-  and **no runtime Java class loading**, so shared code must stay within what babashka
-  can load, or become a pod. That is a real limit on how much the CLI and daemon can
-  share, and it should be decided rather than discovered.
-- Output shape: human-readable tables by default with a `--json`-style flag for
-  scripting, or structured always?
-
-Read [Survey the Clojure ecosystem for tikka's four surfaces](T01-clojure-ecosystem-survey.md)
-for measured startup figures.
+- What is the startup budget? Sub-100ms is the bar for a tool that feels instant.
+- Which approach hits it: **Scala Native**, **GraalVM native-image**, or something else?
+  Read [Survey the Scala ecosystem for tikka's four surfaces](T13-scala-ecosystem-survey.md)
+  for measured figures and for whether cats-effect and the chosen HTTP client actually
+  work on each.
+- **Does the CLI use the Typelevel stack at all?** Initialising a cats-effect runtime
+  costs startup time, and a native target may constrain which libraries load. A CLI that
+  makes one HTTP call and prints may be better served by a minimal client with no effect
+  system — which is legitimate, but it means the CLI shares less of the core. Decide how
+  much sharing is worth how many milliseconds.
+- **Shared code.** Domain types and codecs cross-compiled to the native target, or a
+  small duplicated client? Duplication is the honest answer if cross-building costs more
+  than the code it saves.
+- **Output shape.** Human-readable tables by default with a machine flag for scripting,
+  or structured always?
+- **Build cost.** Native builds are slow and have their own failure modes; what does that
+  do to the edit-run loop while developing the CLI?
