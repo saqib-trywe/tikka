@@ -9,6 +9,9 @@ A namespace for issues. Owns a short key (`TIK`) and the sequence that numbers t
 Projects do not nest and carry no configuration — they exist to scope ids and nothing
 else.
 
+A project's key is permanent and a project is never removed: the key is part of every
+issue id ever issued. Its display name is just a label and may change.
+
 ## Issue
 
 The unit of work, and the only substantial entity in tikka. An issue has a title, a
@@ -30,6 +33,12 @@ Exactly two values: `open` and `closed`. Nothing else is a status.
 **In progress** is not a status. It is *derived*: an open issue with an assignee is in
 progress. This is a deliberate refusal — a stored in-progress flag can drift out of
 agreement with the assignee, and a derived one cannot.
+
+**Reopening** returns a closed issue to open, discarding its resolution (the timeline
+keeps it).
+
+Issues are never deleted. Closing as `dropped` is the only way out, including for issues
+created by mistake.
 
 ## Resolution
 
@@ -53,9 +62,26 @@ it safe for concurrent sessions to race for the same work.
 
 An open issue with no assignee is **unclaimed**.
 
+The assignee changes only by claiming, releasing, or reassigning — each conditional on
+who holds it now:
+
+- **Release** — the holder gives the issue up.
+- **Reassign** — someone other than the holder moves the issue on, naming the holder they
+  expect to displace. Reassigning to nobody clears the claim.
+
+A **stale claim** is one held long enough that its holder has probably gone — typically an
+agent session that ended mid-work. Claims never lapse on their own; a stale claim stays
+until someone reassigns it.
+
+## Comment
+
+A remark appended to an issue. Comments are only ever added, never edited or removed, so
+two writers can never conflict over one.
+
 ## Edges
 
-Exactly three kinds of relationship between issues.
+Exactly three kinds of relationship between issues. Parent and blocks edges only connect
+issues in the same project; mentions may reach across projects.
 
 ### Parent
 
@@ -92,6 +118,8 @@ The position of an issue in a total order. Defaults to the issue's sequence numb
 order is deterministic without anyone setting it, and can be overwritten to reorder.
 
 Rank is not priority. Tikka has no priority.
+
+Ranks need not be unique; issues with equal rank are ordered by issue number.
 
 ## Event
 

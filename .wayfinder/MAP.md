@@ -51,16 +51,21 @@ says otherwise. Research tickets call `research`. The walking skeleton calls
 - [Adopt Scala with the Typelevel stack](tickets/T12-adopt-scala.md): Scala 3 with
   cats-effect, http4s, fs2 and circe, plus Laminar — deliberately overriding the
   installed direct-style skill, with the MCP-bridge and CLI-startup costs accepted.
+- [Define tikka's core invariants](tickets/T02-core-invariants.md): invariants hold at all
+  times and any write that would break one is rejected with the conflict named; no
+  deletion; the assignee changes only by compare-and-set claim, release or reassign, and
+  claims never expire; closing any blocker releases its dependents and reports them.
 
 ## Not yet specified
 
 - **Event log schema** — what an event records, how much an update coalesces into one
   event, and how the timeline reads in the UI. Waits on the persistence engine.
 - **Body and mention conventions** — how `TIK-nn` is detected in markdown without
-  false positives, whether mentions are rendered as live links, and what happens to a
-  mention of an issue that is later deleted.
-- **MCP failure semantics** — how an agent learns its claim lost a race, or that a
-  write was rejected by an invariant. Waits on the MCP tool contract.
+  false positives, whether mentions are rendered as live links, and what a mention of an
+  id that does not exist yet means once that issue is created.
+- **MCP failure semantics** — rejections name their conflict (settled with the
+  invariants); still open is the machine-readable shape of that error, and whether an
+  agent gets a suggested next step. Waits on the MCP tool contract.
 - **Search depth** — whether structured filters are joined by full-text over bodies
   and comments, or filters alone carry it.
 - **The frontier/graph view** — what the web UI actually draws for blocking edges and

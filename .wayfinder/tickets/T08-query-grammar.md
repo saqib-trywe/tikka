@@ -31,5 +31,15 @@ work is deciding exactly which dimensions exist and how they compose.
   arguments, UI controls.
 - **Sort and pagination**, which an agent needs to avoid unbounded results.
 
+Settled by [Define tikka's core invariants](T02-core-invariants.md), and so inputs rather
+than questions here:
+
+- **Unblocked** means every blocker is closed, *whatever its resolution*.
+- **Default order** is rank ascending, ties broken by issue number — always total.
+- The grammar must be able to express **claims older than a given age**; that filter is
+  the entire mechanism for finding stale claims, since claims never expire.
+- Parent and blocks edges never cross projects, so blocking-aware predicates can be
+  evaluated within a single project.
+
 Depends on [Define tikka's core invariants](T02-core-invariants.md), since
 blocking-and-closure semantics define what "unblocked" means.

@@ -17,6 +17,20 @@ intent tool is justified only by an invariant or a race it enforces — never by
 convenience. `claim_issue` (atomic compare-and-set), `close_issue` (demands resolution
 and comment) and `frontier` are the known members.
 
+[Define tikka's core invariants](T02-core-invariants.md) added hard requirements this
+contract must carry:
+
+- The assignee is **not** settable through generic update. It needs `claim`, `release`
+  and `reassign` (naming the expected holder) — so the ~7–8 tool budget is under
+  pressure. Decide whether those are three tools or one assignee tool with a mode.
+- `close_issue` **returns the issues it newly unblocked**.
+- Reopen exists and is invariant-checked — a tool, or a mode of close?
+- Writes to title/body/labels take an **optional expected version**; stale → rejected.
+- Every invariant rejection **names the conflict** — the open children, the open
+  blockers, or the cycle path. Design the error shape so an agent can act on it without a
+  follow-up query.
+- There is no delete tool, by rule.
+
 What this ticket must produce:
 
 - The **full tool list** with names, argument schemas, and return shapes.
