@@ -19,13 +19,13 @@ object Main extends IOApp:
         store  <- Store.resource(home)
         core    = Core(store)
         sessions <- Resource.eval(Ref.of[IO, Map[String, String]](Map.empty))
-        app     = Http.hardened(home.port)(Http.routes(core) <+> Mcp.routes(core, sessions)).orNotFound
+        app     = Http.hardened(home.port)(Http.routes(core) <+> Mcp.routes(core, sessions) <+> Ui.routes(home)).orNotFound
         _      <- EmberServerBuilder.default[IO]
                     .withHost(ipv4"127.0.0.1")
                     .withPort(Port.fromInt(home.port).get)
                     .withHttpApp(app)
                     .build
-        _      <- Resource.eval(IO.println(s"tikka daemon on http://127.0.0.1:${home.port} (home ${home.dir}; $report)"))
+        _      <- Resource.eval(IO.println(s"tikka daemon on http://127.0.0.1:${home.port} (home ${home.dir}; $report; ui ${home.uiDir.fold("embedded")(d => s"dev from $d")})"))
       yield ()
       daemon.useForever.as(ExitCode.Success)
     case _ => IO.println("usage: daemon run").as(ExitCode(2))
