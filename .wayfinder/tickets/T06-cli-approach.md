@@ -148,3 +148,8 @@ support lives entirely in the daemon and never requires rebuilding the proxy.
 > **Refined by [Decide export and durability](T17-export-and-durability.md):** `tikka daemon export <file>` and
 > `tikka daemon restore <snapshot>` are daemon-jar operations that the CLI invokes, not HTTP calls. Both must work when no
 > daemon is running.
+
+> **Refined by the build's scaffold milestone ([build plan](../../docs/build-plan.md), M0):** on the JVM the CLI uses
+> sttp's `HttpClientCatsBackend`, one file per platform. A refused connection is sttp's `ConnectException` on the JVM, but on
+> Native the curl backend raises a plain `RuntimeException` ("Command failed with status COULDNT_CONNECT"), so exit code `3`
+> must recognise both.

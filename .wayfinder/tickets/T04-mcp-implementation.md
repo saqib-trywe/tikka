@@ -104,3 +104,7 @@ the condition for revisiting.
 > Claude Code validates it against `outputSchema`. The released conformance suite (npm 0.1.16) predates 2026-07-28, so CI
 > runs it from GitHub `main` until a release ships. The hand-rolled adapter came to about 200 lines and passed every applicable
 > scenario at both revisions.
+
+> **Refined by the build's scaffold milestone ([build plan](../../docs/build-plan.md), M0):** npm now publishes the
+> suite's 2026-07-28 scenarios as the prerelease `0.2.0-alpha.11` (2026-08-07). CI pins that version instead of running
+> GitHub `main`, so runs are reproducible, and bumps it deliberately.
