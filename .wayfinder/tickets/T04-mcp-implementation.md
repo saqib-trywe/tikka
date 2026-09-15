@@ -35,3 +35,12 @@ costs accepted in [ADR 0001](../../docs/adr/0001-scala-with-typelevel-stack.md) 
   field lags at 2025-11-25, so spec drift is a standing condition. Does tikka pin a
   revision and accept going stale, or commit to following — and who absorbs the drift
   under each implementation choice?
+
+**Inherited from [Survey the Scala ecosystem for tikka's four surfaces](T13-scala-ecosystem-survey.md):**
+three cats-effect MCP libraries expose http4s routes: ingarabr/scala-mcp-sdk (2025-11-25, dormant since
+May), linkyard/scala-effect-mcp (2025-06-18) and andimiller/scala-mcp (JVM/JS/Native). All are
+single-maintainer projects. The Java SDK 2.0.1 is conformance-tested at 2025-11-25, but its server
+transports are servlet-based, so http4s needs a hand-written transport. chimp's streaming path does not
+cover cats-effect. The only 2026-07-28 implementation, fast-mcp-scala, is ZIO. Streamable HTTP lets
+Claude Code connect to the daemon directly; stdio-only clients need a proxy, which the native CLI can
+provide.

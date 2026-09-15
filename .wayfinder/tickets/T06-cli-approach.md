@@ -38,3 +38,11 @@ process — this much survived from the Clojure survey.
 queries are a positional argument in the shared syntax. Decide whether the CLI parses
 locally (the parser must then build for the native target) or sends the raw string and lets
 the daemon reject it — the latter keeps the CLI thinner at the cost of a round trip for typos.
+
+**Inherited from [Survey the Scala ecosystem for tikka's four surfaces](T13-scala-ecosystem-survey.md):**
+startup no longer separates the options. cats-effect's published hello world takes 7.5 ms on Scala
+Native (0.5.12) and 11.2 ms on GraalVM native-image. On Native, the Ember client, fs2-io, sttp 4,
+circe, jsoniter-scala, decline and tapir-core all publish, so a CLI on the Typelevel stack costs nothing
+in startup. The deciding factors are build time, binary size, and whether the query parser
+cross-builds to Native for local validation. The CLI is also the natural stdio-to-HTTP MCP proxy
+for clients that only spawn stdio servers.

@@ -38,3 +38,9 @@ judged against that narrow job, not against what a general-purpose SPA would wan
 the UI is a search box over the shared syntax, with controls editing the string and the URL
 carrying it; the query parser must cross-compile to Scala.js so the UI validates locally;
 paging is "load more" over cursors.
+
+**Inherited from [Survey the Scala ecosystem for tikka's four surfaces](T13-scala-ecosystem-survey.md):**
+tapir-sttp-client4 publishes for Scala.js, so shared endpoint definitions give a typed Laminar client.
+Laminar stable is 17.2.1 (2025-03) and the active line is 18.0.0-M5, with Waypoint 10.0.0-M7; pick
+one deliberately. vite-plugin-scalajs has had no release since 2025-08-04. circe and jsoniter-scala
+both cross-compile, but bundle sizes are unmeasured; measure in the skeleton. http4s-dom has stalled.

@@ -37,3 +37,10 @@ recursive CTEs the honest answer for a schema this small?
 full-text search over title, body and comments is now a hard requirement; `under:` needs
 descendant queries at any depth; and cursor pagination must stay stable while other writers
 commit, which argues for keyset (rank, issue number) cursors the store can index.
+
+**Inherited from [Survey the Scala ecosystem for tikka's four surfaces](T13-scala-ecosystem-survey.md):**
+SQLite through doobie meets every requirement above. sqlite-jdbc 3.53.4.0 bundles FTS5,
+`Update0.run` returns the row count for the claim compare-and-set, and one `ConnectionIO` carries the
+mutation plus its event. skunk is Postgres-only and out; Quill has stalled. What's left is
+mostly tuning: WAL and busy timeout, the single-writer transactor shape, and whether FTS5 is a
+contentless or external-content table kept in sync by triggers.

@@ -59,6 +59,11 @@ says otherwise. Research tickets call `research`. The walking skeleton calls
   GitHub-style text syntax on every surface — AND across filters, OR within, negation, no
   parentheses; `ready` names open-unblocked-unclaimed work; full-text search; cursor paging;
   strict rejection of anything unparseable.
+- [Survey the Scala ecosystem for tikka's four surfaces](tickets/T13-scala-ecosystem-survey.md):
+  SQLite through doobie meets every persistence requirement; three cats-effect MCP libraries mount
+  as http4s routes but all trail the 2026-07-28 spec; a tapir endpoint shared across JVM and
+  Scala.js gives Laminar a typed client; cats-effect starts in single-digit milliseconds on Scala
+  Native, so the CLI can stay on the Typelevel stack.
 
 ## Not yet specified
 
