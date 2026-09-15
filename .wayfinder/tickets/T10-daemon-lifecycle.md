@@ -56,3 +56,9 @@ cheap for MCP. The daemon binds `127.0.0.1` only.
 the CLI sends the binding as a `Tikka-Project` header and warns when `GET /api/meta` reports a
 daemon version different from its own; decide whether that warning ever becomes an automatic
 restart.
+
+**Inherited from [Choose the CLI approach](T06-cli-approach.md):**
+the CLI exits `3` when the daemon is unreachable; decide whether it (and `tikka mcp`) starts the
+daemon instead. `tikka project new KEY "Name"` is the project-creation command, so decide how it
+relates to binding a repo. The CLI and daemon are versioned separately, and the CLI warns on mismatch
+via `/api/meta`. macOS and Linux only.

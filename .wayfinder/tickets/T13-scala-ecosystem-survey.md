@@ -129,9 +129,12 @@ is fast-mcp-scala, and that library is ZIO-based. Everything Typelevel-native si
 ### 5. CLI startup (sub-100ms target)
 
 - **Scala Native** 0.5.12 (2026-05-22). cats-effect has supported Native since 3.3.14. The
-  project's published hello world starts in **7.5 ms ± 1.2 ms** (hyperfine). The caveat is
-  that the documented Native runtime is single-threaded: there is no blocking pool, and
-  `IO.blocking` blocks the only thread. That doesn't matter for a CLI that makes one call.
+  project's published hello world starts in **7.5 ms ± 1.2 ms** (hyperfine).
+  *Corrected 2026-09-15 by [Choose the CLI approach](T06-cli-approach.md):* the survey originally
+  repeated the docs page's claim that the Native runtime is single-threaded with no blocking pool.
+  That page is stale. **cats-effect 3.7.0 brought full multithreading, `epoll`/`kqueue` polling and
+  `blocking` to Scala Native 0.5.** The 7.5 ms figure predates the multithreaded runtime, so its
+  startup is unmeasured.
   On Native: fs2-io 3.14.0, http4s Ember **client** 0.23.37, sttp client 4.0.26,
   decline 2.6.2 (CLI arg parsing), circe and jsoniter-scala. A cats-effect, Ember, circe
   and decline CLI builds entirely from published Native artifacts.

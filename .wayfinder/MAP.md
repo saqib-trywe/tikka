@@ -82,6 +82,10 @@ says otherwise. Research tickets call `research`. The walking skeleton calls
 - [Design the HTTP API shape](tickets/T09-http-api-shape.md): MCP and HTTP are thin adapters over
   one core; REST for CRUD with POST intent actions; tapir endpoints shared across daemon, UI and
   CLI also derive the MCP schemas; JSON only, three statuses, a resumable SSE event stream.
+- [Choose the CLI approach](tickets/T06-cli-approach.md): Scala Native with cats-effect and the
+  shared tapir client, gated in CI at a 100 ms median; raw queries to the daemon; MCP's text
+  renderer for output; bulk close and project creation as CLI-only human acts; `tikka mcp` as a
+  framing-only stdio proxy.
 
 ## Not yet specified
 

@@ -2,7 +2,7 @@
 id: T06
 title: Choose the CLI approach
 type: grilling
-status: open
+status: closed
 assignee: saqib
 blocked-by: [T13]
 ---
@@ -58,3 +58,82 @@ the CLI's HTTP client is the tapir-derived sttp client from the shared module, s
 definitions must build for Scala Native. It sends `Tikka-Project` from the repo binding, calls
 `GET /api/meta` to warn on a daemon version mismatch, and switches on the error body's `error`
 code (statuses are only 404/400/409).
+
+## Resolution
+
+Decided 2026-09-15.
+
+**Correction to the inherited caveat above:** cats-effect 3.7.0 brought full multithreading,
+`epoll`/`kqueue` polling and `blocking` to Scala Native 0.5, so the "single-threaded, no blocking
+pool" docs page was stale. fs2-io's `stdin` on Native reads asynchronously through the runtime's
+file-descriptor poller on macOS and Linux, so the stdio proxy blocks no thread. The survey ticket is
+corrected.
+
+### Target and budget
+
+- **Scala Native**, with **GraalVM native-image as the named fallback** if the skeleton finds a Native
+  break. Every dependency publishes for Native (cats-effect 3.7.1, fs2 3.14.0, circe, sttp 4.0.26, tapir's
+  sttp4 client, decline 2.6.2). The shared module already cross-builds for Scala.js, so Native is one more
+  platform in an existing matrix. Rejected GraalVM as the primary (minute-long builds, tens of MB, reflection
+  analysis breaks on dynamic dependencies) and a JVM with class-data sharing (hundreds of ms).
+- **Budget:** `tikka search` against a running daemon, from process start to last byte printed,
+  **under 100 ms at the median** by `hyperfine`. The multithreaded runtime's startup is the unknown;
+  the first remedy if it misses is a single-threaded runtime configuration for the CLI, before any
+  change of target.
+
+### Runtime
+
+- **cats-effect `IOApp` with the tapir-derived sttp client over sttp's http4s (Ember) backend.** It is
+  pure Scala, with no system libcurl. `tikka mcp` genuinely needs concurrency (stdin, HTTP and stdout as one
+  stream), and the shared module is cats-effect-shaped. **Fallback if startup misses:** the synchronous
+  curl backend without cats-effect for one-shot commands.
+- **Queries are sent raw** and the daemon rejects them with suggestions. The CLI is versioned separately
+  from the daemon, so a local parser could disagree with the daemon's; the UI can parse locally because it
+  ships inside the daemon.
+
+### Output and exit codes
+
+- **Human-readable by default, using the same compact text renderer as MCP results**, so terminal and
+  agent output never drift. `--json` prints the `structuredContent` JSON. Output never switches format when piped.
+- **Exit codes:** `0` success; `1` domain rejection (the contract's error code first on stderr, e.g.
+  `claim_conflict: …`; the error body with `--json`); `2` usage error; `3` daemon unreachable.
+
+### Commands
+
+| Command | Maps to |
+|---|---|
+| `tikka search '<query>'` (alias `ls`) | `search_issues` |
+| `tikka show TIK-42 [--events]` | `get_issue` |
+| `tikka new "<title>" [--body-file f\|-] [--label l]… [--parent id] [--blocked-by id]… [-m comment]` | `create_issue` |
+| `tikka edit TIK-42 [--title …] [--label +a -b] [--parent id\|none] [--blocked-by +id -id] [--rank n\|--before id\|--after id] [-m comment]` | `update_issue` |
+| `tikka claim\|release TIK-42 [--as name]` | `claim_issue` / `release_issue` |
+| `tikka reassign TIK-42 --from x --to y` | `reassign_issue` |
+| `tikka close TIK-42 done\|dropped -m "…"` | `close_issue` |
+| `tikka reopen TIK-42 -m "…"` | `reopen_issue` |
+| `tikka close --query '<q>' dropped -m "…"` | **bulk close**, CLI only |
+| `tikka project new KEY "Name"` | **project creation**, human only, not on MCP |
+| `tikka mcp` | stdio proxy |
+
+- `--as` defaults to `$TIKKA_ASSIGNEE`, then the OS username.
+- **Bulk close** closes matching issues leaves-first, one ordinary close each, **not atomic**. It stops at
+  the first rejection, lists what it closed and exits `1`. One core call never mutates many issues.
+- **`tikka edit TIK-42` with no flags** opens `$EDITOR` on the body and **always passes the version it
+  read**, so a concurrent agent edit surfaces as `stale_version` instead of being overwritten. An unchanged
+  file is a no-op.
+
+### `tikka mcp`
+
+**Framing only.** It reads newline-delimited JSON-RPC from stdin, POSTs each message to
+`/mcp?project=<binding>`, passes through `MCP-Protocol-Version` and `Mcp-Session-Id`, and writes each response
+body back as a line. A 202 response to a notification writes nothing. It never interprets the protocol, so revision
+support lives entirely in the daemon and never requires rebuilding the proxy.
+
+### Build and install
+
+- The CLI module cross-builds for the JVM and Native. **Development runs on the JVM**; Native links only in CI,
+  at install, and for the startup benchmark. **CI links in release mode and fails the build if the
+  `hyperfine` check misses 100 ms.**
+- **Install:** one build task links a release binary and copies it to `~/.local/bin/tikka`. No
+  packaging.
+- **macOS and Linux only.** fs2's async stdin on Native covers those two, and Windows is not wanted.
+  A deliberate limit.

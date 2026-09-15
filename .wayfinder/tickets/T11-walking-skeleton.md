@@ -50,3 +50,9 @@ the skeleton proves one core under two adapters: tapir endpoints in a cross-comp
 interpreted to http4s on the daemon and to sttp clients on Scala.js and Scala Native, with tapir
 `Schema` also feeding the hand-rolled MCP layer's tool schemas. If tapir's Native or JS client
 does not build, that is the finding.
+
+**Inherited from [Choose the CLI approach](T06-cli-approach.md):**
+the skeleton links the CLI for Scala Native and measures `tikka search` against a running daemon
+with `hyperfine`. The budget is a 100 ms median, and the multithreaded cats-effect runtime's startup is the
+specific unknown. If it misses, try a single-threaded runtime configuration, then the sync curl
+backend without cats-effect, then GraalVM, and record which one held.
