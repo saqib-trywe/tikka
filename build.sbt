@@ -162,9 +162,10 @@ lazy val cli = crossProject(JVMPlatform, NativePlatform)
     nativeConfig ~= (_.withBaseName("tikka"))
   )
 
-// Links the release CLI binary (the startup gate measures this build), then drops the `set` so later links in the same
-// sbt server go back to debug mode.
+// Links the release CLI binary that the startup gate measures, then drops the `set` so later links in the same sbt server
+// go back to debug mode. No LTO: thin LTO fails to link on GitHub's macOS runners (missing libunwind symbols), and
+// startup is far inside the budget without it.
 addCommandAlias(
   "cliRelease",
-  "set cli.native / nativeConfig ~= (_.withMode(scala.scalanative.build.Mode.releaseFast).withLTO(scala.scalanative.build.LTO.thin)); cliNative / nativeLink; session clear-all"
+  "set cli.native / nativeConfig ~= (_.withMode(scala.scalanative.build.Mode.releaseFast)); cliNative / nativeLink; session clear-all"
 )
