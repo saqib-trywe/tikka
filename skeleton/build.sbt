@@ -70,11 +70,15 @@ lazy val cli = project
   .dependsOn(shared.native)
   .settings(
     // swiftly's clang shadows Apple's on PATH and lacks SDK headers; use the xcrun shim.
-    nativeConfig ~= (_.withClang(file("/usr/bin/clang").toPath).withClangPP(file("/usr/bin/clang++").toPath)),
+    nativeConfig ~= { c =>
+      val base = c.withClang(file("/usr/bin/clang").toPath).withClangPP(file("/usr/bin/clang++").toPath)
+      if sys.env.contains("NATIVE_RELEASE") then base.withMode(scala.scalanative.build.Mode.releaseFast).withLTO(scala.scalanative.build.LTO.thin)
+      else base
+    },
     libraryDependencies ++= Seq(
       "org.typelevel"                 %% "cats-effect"        % "3.7.1",
       "com.softwaremill.sttp.tapir"   %% "tapir-sttp-client4" % tapirV,
-      "com.softwaremill.sttp.client4" %% "http4s-backend"     % sttpV,
-      "org.http4s"                    %% "http4s-ember-client" % http4sV,
+      // Ember on Native links s2n-tls and libidn2 from Homebrew at runtime; curl uses the OS libcurl.
+      "com.softwaremill.sttp.client4" %% "cats"               % sttpV,
     ),
   )
