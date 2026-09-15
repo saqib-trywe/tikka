@@ -3,7 +3,7 @@ id: T04
 title: Choose the MCP server implementation and transport
 type: grilling
 status: open
-assignee: null
+assignee: saqib
 blocked-by: [T13]
 ---
 
