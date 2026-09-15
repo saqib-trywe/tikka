@@ -3,7 +3,7 @@ id: T05
 title: Shape the Laminar frontend
 type: grilling
 status: open
-assignee: null
+assignee: saqib
 blocked-by: [T13]
 ---
 
