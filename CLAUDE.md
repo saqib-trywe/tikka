@@ -2,7 +2,7 @@
 
 An agent-first, local-only work management system. Simpler than JIRA. Scala 3.
 
-Planning lives in [.wayfinder/MAP.md](.wayfinder/MAP.md). Domain vocabulary lives in
+Planning lives in [.wayfinder/MAP.md](.wayfinder/MAP.md). The build follows [docs/build-plan.md](docs/build-plan.md). Domain vocabulary lives in
 [CONTEXT.md](CONTEXT.md) — read it before using any domain term.
 
 ## Stack
