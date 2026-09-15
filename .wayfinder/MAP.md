@@ -86,6 +86,10 @@ says otherwise. Research tickets call `research`. The walking skeleton calls
   shared tapir client, gated in CI at a 100 ms median; raw queries to the daemon; MCP's text
   renderer for output; bulk close and project creation as CLI-only human acts; `tikka mcp` as a
   framing-only stdio proxy.
+- [Daemon lifecycle and repo-to-project binding](tickets/T10-daemon-lifecycle.md): a per-user OS
+  service that nothing starts implicitly; fixed configurable port; one daemon per `TIKKA_HOME` by
+  lock; forward-only migrations with a snapshot first; a committed `.tikka` binding written by
+  `tikka init`, which never creates projects.
 
 ## Not yet specified
 

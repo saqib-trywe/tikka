@@ -124,7 +124,7 @@ about 40–60 tokens. A row never carries a body.
   [Define the event log schema](T14-event-log-schema.md), which may reopen this with a reason.
 - **Tools only.** No MCP resources or prompts: client support is uneven, and a resource would duplicate
   `get_issue`. Omitted on purpose.
-- **Refused:** project tools (creating a project is a human act via CLI or web), batch creates (convenience; sequential
+- **Refused:** project tools ((creating a project is a human act via the CLI — *amended by [Daemon lifecycle and repo-to-project binding](T10-daemon-lifecycle.md): CLI only, not web*)), batch creates (convenience; sequential
   creates already work), and delete (by rule).
 
 ### Errors

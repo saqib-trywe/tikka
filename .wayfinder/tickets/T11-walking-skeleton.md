@@ -56,3 +56,10 @@ the skeleton links the CLI for Scala Native and measures `tikka search` against 
 with `hyperfine`. The budget is a 100 ms median, and the multithreaded cats-effect runtime's startup is the
 specific unknown. If it misses, try a single-threaded runtime configuration, then the sync curl
 backend without cats-effect, then GraalVM, and record which one held.
+
+**Inherited from [Daemon lifecycle and repo-to-project binding](T10-daemon-lifecycle.md):**
+build migrations (`user_version`, snapshot before migrating) and the `daemon.lock` from the first
+commit; retrofitting either onto a store that already holds real tickets is how data gets lost. Honour
+`TIKKA_HOME` everywhere so the skeleton's daemon never touches a real store. Service installation
+(`tikka daemon install`) can wait; `tikka daemon run` in the foreground is enough to prove the
+surfaces.

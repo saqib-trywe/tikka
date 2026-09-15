@@ -2,7 +2,7 @@
 id: T10
 title: Daemon lifecycle and repo-to-project binding
 type: grilling
-status: open
+status: closed
 assignee: saqib
 blocked-by: [T06]
 ---
@@ -62,3 +62,68 @@ the CLI exits `3` when the daemon is unreachable; decide whether it (and `tikka 
 daemon instead. `tikka project new KEY "Name"` is the project-creation command, so decide how it
 relates to binding a repo. The CLI and daemon are versioned separately, and the CLI warns on mismatch
 via `/api/meta`. macOS and Linux only.
+
+## Resolution
+
+Decided 2026-09-15.
+
+### Running the daemon
+
+- **A per-user OS service.** `tikka daemon install` writes a launchd agent (macOS) or systemd user unit
+  (Linux): start at login, restart on crash. `tikka daemon start|stop|restart|status|logs` wrap the service
+  manager; `tikka daemon run` runs it in the foreground for development. **Nothing starts the daemon
+  implicitly.** HTTP MCP clients cannot start anything, so the daemon must already be up, and a service
+  manager gives crash restart without tikka reimplementing supervision. Rejected CLI auto-start (finding
+  a JVM and detaching a child from a native binary: pleasant when it works, baffling when it doesn't).
+- **What it runs as:** an assembly jar in `~/.tikka/lib/`, run by a JDK 21+ whose absolute path is
+  recorded in the service unit at install. Upgrade = rebuild, reinstall the jar, `tikka daemon restart`.
+  No GraalVM daemon: startup doesn't matter for an all-day process.
+- **Port:** a fixed default, overridable in `~/.tikka/config.toml`, which the daemon and CLI both read. If
+  the port is taken, the daemon refuses to start and names the port and config key. No discovery file:
+  MCP configs hardcode the URL, so the port must not move.
+- **One daemon per home:** an exclusive lock on `~/.tikka/daemon.lock`, held for the daemon's lifetime and
+  recording pid, port and version. A second daemon fails immediately, naming the holder. `status` reads it.
+  The port alone isn't enough, because a differently configured second daemon would open the same store.
+- **`TIKKA_HOME`** overrides `~/.tikka` (store, config, lock, logs, backups) for every daemon and CLI
+  command. Developing tikka while its own tickets live in tikka means a dev daemon with its own home and
+  port; tests use a temporary home. There is no per-repo store: one store per home.
+- **Graceful stop:** stop accepting requests, let in-flight writes finish for up to 5 s, checkpoint the WAL,
+  release the lock.
+- **Logs** live under the home, read with `tikka daemon logs`.
+
+### When the daemon is down, or a different version
+
+- **CLI:** exits `3`, naming the fix (`tikka daemon start`, or `tikka daemon install` if no service is
+  installed).
+- **`tikka mcp`:** checks `/api/meta` at launch and, if the daemon is down, exits non-zero with the same message on stderr,
+  so the MCP client reports that the server failed to start. If the daemon dies mid-session, the proxy keeps running and answers each
+  request with a JSON-RPC error naming the fix, extracting only the request `id` (the one exception to
+  framing-only), then resumes forwarding once the daemon is back. A post-upgrade restart shouldn't force every
+  stdio client to reconnect by hand.
+- **Version mismatch:** one stderr warning line per CLI invocation, **never an automatic restart**, which
+  would drop other agents' in-flight requests and sessions.
+
+### Upgrades
+
+**Numbered, forward-only migrations built into the daemon, tracked by SQLite's `user_version`**, applied at
+startup in one transaction after a `VACUUM INTO <home>/backups/<timestamp>-v<N>.db` snapshot. A daemon
+that finds a store newer than it knows refuses to open it, naming both versions. Rejected "it's local,
+delete it": the store is the permanent record of agents' work, and issues are never deleted.
+
+### Projects and binding
+
+- **Repo binding:** a **committed** `.tikka` file (TOML, `project = "TIK"`), found by walking up from the
+  working directory the way git finds `.git`. Committed because it's single-user and a fresh clone
+  should just work. TOML so it can grow.
+- **Outside a bound directory**, the CLI behaves like unbound MCP: unscoped searches span all projects, and
+  `tikka new` needs `--project`.
+- **Key format:** 2–10 characters, an uppercase letter then uppercase letters or digits. Keys are permanent,
+  so validation is strict.
+- **`tikka project new KEY "Name"`** creates a project. **CLI only**: the web UI lists projects but never
+  creates them (this amends the tool contract's "CLI or web").
+- **`tikka init KEY`** writes `.tikka` and the project-scoped MCP entry (`claude mcp add --scope project
+  --transport http tikka http://127.0.0.1:<port>/mcp?project=KEY`, or prints the snippet for other clients).
+  It **fails if KEY doesn't exist**, pointing at `tikka project new`, so a typo never becomes a permanent key.
+  `tikka init KEY --new "Name"` creates and binds in one explicit step. The binding thus lives in two files
+  (`.tikka` for CLI and stdio, the MCP config URL for HTTP clients); `init` writes both, and that duplication is
+  accepted.

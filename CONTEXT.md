@@ -9,13 +9,17 @@ A namespace for issues. Owns a short key (`TIK`) and the sequence that numbers t
 Projects do not nest and carry no configuration — they exist to scope ids and nothing
 else.
 
+A key is 2–10 characters: an uppercase letter, then uppercase letters or digits (`TIK`,
+`WF2`).
+
 A project's key is permanent and a project is never removed: the key is part of every
 issue id ever issued. Its display name is just a label and may change.
 
 ### Bound project
 
 The project a working context means when it names none — a repository directory, or an
-agent's connection to tikka. Binding is set once, outside any conversation. Naming a
+agent's connection to tikka. Binding is set once, outside any conversation. Binding a
+context to a project never creates the project. Naming a
 project explicitly always overrides it; with no binding, nothing is assumed.
 
 ## Issue

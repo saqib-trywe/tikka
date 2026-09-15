@@ -57,3 +57,7 @@ sttp client. The daemon serves `index.html` for any path outside `/api`, `/mcp` 
 so SPA routes like `/i/TIK-42` work as deep links. The API is JSON only. An SSE stream
 (`/api/events/stream`, resumable via `Last-Event-ID`) exists; whether the UI goes live is still
 yours. The UI sends no `Tikka-Project` header, and multi-project UX stays unmapped.
+
+**Inherited from [Daemon lifecycle and repo-to-project binding](T10-daemon-lifecycle.md):**
+the web UI never creates projects (CLI only); it lists them. The UI is served by the daemon on its
+fixed, configurable port at `127.0.0.1`.
