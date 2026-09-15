@@ -75,6 +75,10 @@ says otherwise. Research tickets call `research`. The walking skeleton calls
 - [Define the event log schema](tickets/T14-event-log-schema.md): one write is one event holding
   field changes and its comment; events also land on edge counterparts and unblocked dependents
   but never on mentioned issues; a global sequence orders them and feeds live updates over HTTP.
+- [Choose the MCP server implementation and transport](tickets/T04-mcp-implementation.md): hand-rolled
+  JSON-RPC over http4s at `/mcp`, JSON-only, speaking the current and previous spec revisions with
+  the conformance suite in CI; stdio only via a CLI proxy; localhost hardened against foreign
+  origins. See [ADR 0002](../docs/adr/0002-hand-rolled-mcp.md).
 
 ## Not yet specified
 

@@ -2,7 +2,7 @@
 id: T04
 title: Choose the MCP server implementation and transport
 type: grilling
-status: open
+status: closed
 assignee: saqib
 blocked-by: [T13]
 ---
@@ -50,3 +50,47 @@ nine tools, tools only (no resources or prompts). The implementation must suppor
 `structuredContent` next to a text block, and domain errors as `isError` results. It must read a
 project binding from the endpoint URL (`…/mcp?project=TIK`) and derive the actor from the
 connection. Weigh candidate libraries against those requirements.
+
+## Resolution
+
+Decided 2026-09-15. **Hand-rolled JSON-RPC over circe, mounted in the daemon's http4s server at
+`/mcp`.** See [ADR 0002](../../docs/adr/0002-hand-rolled-mcp.md) for the candidate-by-candidate gaps and
+the condition for revisiting.
+
+### Protocol surface
+
+- Methods: `initialize` (2025-11-25 lifecycle only), `ping`, `tools/list`, `tools/call`. Nothing else.
+- **JSON responses only.** A POST is answered with `application/json`; GET `/mcp` returns 405. There are no
+  server-initiated messages (no progress, sampling or `list_changed`), so connection lifetimes don't exist.
+- **Revisions: the current dated revision and the one before it**, currently 2026-07-28 (stateless, `_meta`
+  per request) and 2025-11-25 (initialize handshake), chosen by what the client sends. When a new revision
+  lands, add it and drop the oldest. Rejected pinning either one alone.
+- **Conformance suite in CI** at both revisions. This is what makes owning the protocol safe.
+- **Sessions only on the 2025-11-25 lifecycle**, holding only the client name from `initialize`
+  so the event actor is right on both revisions. They live in memory; after a daemon restart the client gets a 404 and
+  re-initializes, per spec. Nothing else is keyed on a session.
+
+### Tools and errors
+
+- **Schemas are derived from the shared Scala argument and result types**, with field descriptions next to
+  the fields. One definition feeds `inputSchema`/`outputSchema`, circe codecs and the HTTP API. The derivation
+  library is picked in the walking skeleton. Rejected hand-written JSON Schema, which drifts from the decoders.
+- **Argument validation failures are `isError` results** (`invalid_argument`), so the model can correct itself.
+  JSON-RPC errors are reserved for unknown tools and malformed JSON-RPC.
+- **Resources and prompts: none**, per the tool contract.
+
+### Binding and exposure
+
+- **An unknown project in the binding** (`/mcp?project=TKA`) is refused at the HTTP level: 404 with a body
+  naming the valid keys. The human who wrote the config sees a connection failure, and creating the project
+  fixes it without a restart. Rejected accepting and failing every tool call, since the model cannot fix its own config.
+- **Localhost hardening, on every route (MCP, API, UI):** bind `127.0.0.1` only; reject any `Origin`
+  other than the daemon's own; reject a `Host` that isn't `localhost`/`127.0.0.1` on the daemon port
+  (DNS rebinding). "No auth" assumed only the user can reach the daemon, and this makes that true.
+
+### Transport
+
+- **Streamable HTTP in the daemon is the only MCP endpoint.** Claude Code and Codex connect directly.
+- **stdio exists only as `tikka mcp`**, a thin proxy subcommand of the native CLI for stdio-only
+  clients (Claude Desktop's local config). It is built with the CLI, not the skeleton. It reads the repo's
+  binding and forwards to the daemon, so no JVM process handles stdio.

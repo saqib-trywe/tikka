@@ -46,3 +46,9 @@ circe, jsoniter-scala, decline and tapir-core all publish, so a CLI on the Typel
 in startup. The deciding factors are build time, binary size, and whether the query parser
 cross-builds to Native for local validation. The CLI is also the natural stdio-to-HTTP MCP proxy
 for clients that only spawn stdio servers.
+
+**Inherited from [Choose the MCP server implementation and transport](T04-mcp-implementation.md):**
+the CLI carries `tikka mcp`, a stdio-to-HTTP proxy for stdio-only MCP clients: newline-delimited
+JSON-RPC on stdin forwarded to the daemon's `/mcp` with the repo's binding applied. On Scala Native the
+cats-effect runtime is documented as single-threaded, with no blocking pool, so reading stdin must not block the
+only thread. Verify how fs2-io reads stdin on Native before committing to cats-effect here.

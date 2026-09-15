@@ -46,3 +46,8 @@ migration runner cheap if you want one.
 an MCP connection is bound by its endpoint URL (`…/mcp?project=TIK`); the stdio proxy
 (`tikka mcp`) reads the repo's binding and applies it. Unbound connections require `project` on
 create and search all projects. Creating a project is a human act through the CLI or web, never MCP.
+
+**Inherited from [Choose the MCP server implementation and transport](T04-mcp-implementation.md):**
+decide what `tikka mcp` (the stdio proxy) does when no daemon is listening. MCP sessions on the
+2025-11-25 lifecycle are in-memory and lost on restart (clients re-initialize), so restarts are
+cheap for MCP. The daemon binds `127.0.0.1` only.

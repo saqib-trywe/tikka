@@ -44,3 +44,9 @@ the HTTP API exposes a cross-issue event feed ordered by a global sequence ("eve
 which MCP does not have; decide whether it is a paged endpoint, an SSE stream, or both, and how
 a client resumes after a disconnect. Full issue history (beyond MCP's latest 50) and full
 before/after text for prose changes are served here.
+
+**Inherited from [Choose the MCP server implementation and transport](T04-mcp-implementation.md):**
+localhost hardening applies to the API too: `127.0.0.1` only, a foreign `Origin` rejected, `Host`
+validated against DNS rebinding. MCP lives at `/mcp` on the same port, so pick API paths that don't
+collide (`/api/…`). Argument and result types are shared with MCP and schemas are derived from them,
+so the API's request and response bodies should be those same types.
