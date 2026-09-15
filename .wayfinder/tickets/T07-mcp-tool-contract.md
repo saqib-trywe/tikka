@@ -47,3 +47,9 @@ What this ticket must produce:
 Depends on [Define tikka's core invariants](T02-core-invariants.md) for the invariants
 being enforced, and [Choose the persistence engine](T03-persistence-engine.md) for what
 the store can do atomically.
+
+**Inherited from [Define the shared query and filter grammar](T08-query-grammar.md):**
+list/search tools take a single `query` string in the shared syntax, documented in the
+tool description; results are cursor-paged (default 50, max 200); query errors name the bad
+token and suggest alternatives. `ready` is a query predicate — decide whether a dedicated
+`frontier`-style tool still earns its place, or whether search with `ready` suffices.

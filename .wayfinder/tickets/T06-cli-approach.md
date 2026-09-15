@@ -33,3 +33,8 @@ process — this much survived from the Clojure survey.
   or structured always?
 - **Build cost.** Native builds are slow and have their own failure modes; what does that
   do to the edit-run loop while developing the CLI?
+
+**Inherited from [Define the shared query and filter grammar](T08-query-grammar.md):**
+queries are a positional argument in the shared syntax. Decide whether the CLI parses
+locally (the parser must then build for the native target) or sends the raw string and lets
+the daemon reject it — the latter keeps the CLI thinner at the cost of a round trip for typos.

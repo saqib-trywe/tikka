@@ -31,3 +31,7 @@ something has to start it, and something has to decide which project a command m
 
 Depends on [Choose the CLI approach](T06-cli-approach.md), since the CLI is what most
 often trips the lifecycle.
+
+**Inherited from [Define the shared query and filter grammar](T08-query-grammar.md):**
+an unscoped query defaults to the bound project. Decide what "bound" means where there is no
+working directory — notably MCP clients — and what an unscoped query does then.

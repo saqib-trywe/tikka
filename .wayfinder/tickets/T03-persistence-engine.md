@@ -32,3 +32,8 @@ is the house skill's preference but is direct-style, so it fits tikka's stack po
 note this is a case where the overridden skill's advice genuinely does not transfer.
 Weigh also: does anything here need a typed query DSL at all, or are hand-written SQL and
 recursive CTEs the honest answer for a schema this small?
+
+**Inherited from [Define the shared query and filter grammar](T08-query-grammar.md):**
+full-text search over title, body and comments is now a hard requirement; `under:` needs
+descendant queries at any depth; and cursor pagination must stay stable while other writers
+commit, which argues for keyset (rank, issue number) cursors the store can index.

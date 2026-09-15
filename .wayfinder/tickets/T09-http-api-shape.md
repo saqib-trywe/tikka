@@ -28,3 +28,7 @@ The question is what relationship those bear to each other.
 
 Depends on [Design the MCP tool contract](T07-mcp-tool-contract.md) — the MCP contract is
 primary, so HTTP is designed against it rather than the reverse.
+
+**Inherited from [Define the shared query and filter grammar](T08-query-grammar.md):**
+listing takes one `?q=` parameter in the shared syntax and returns an opaque next cursor.
+No per-filter query parameters.

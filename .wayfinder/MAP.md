@@ -55,6 +55,10 @@ says otherwise. Research tickets call `research`. The walking skeleton calls
   times and any write that would break one is rejected with the conflict named; no
   deletion; the assignee changes only by compare-and-set claim, release or reassign, and
   claims never expire; closing any blocker releases its dependents and reports them.
+- [Define the shared query and filter grammar](tickets/T08-query-grammar.md): one
+  GitHub-style text syntax on every surface — AND across filters, OR within, negation, no
+  parentheses; `ready` names open-unblocked-unclaimed work; full-text search; cursor paging;
+  strict rejection of anything unparseable.
 
 ## Not yet specified
 
@@ -66,9 +70,7 @@ says otherwise. Research tickets call `research`. The walking skeleton calls
 - **MCP failure semantics** — rejections name their conflict (settled with the
   invariants); still open is the machine-readable shape of that error, and whether an
   agent gets a suggested next step. Waits on the MCP tool contract.
-- **Search depth** — whether structured filters are joined by full-text over bodies
-  and comments, or filters alone carry it.
-- **The frontier/graph view** — what the web UI actually draws for blocking edges and
+- **The ready/graph view** — what the web UI actually draws for blocking edges and
   hierarchy, and whether that is a diagram or an ordered list.
 - **Multi-project UX** — how one daemon presents several projects without reintroducing
   a project-picker workflow.

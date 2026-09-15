@@ -112,6 +112,8 @@ An opaque string attached to an issue. Tikka attaches no meaning to any label an
 interprets none of them, including namespaced ones like `wayfinder:map`. Meaning belongs
 to whoever is reading.
 
+Labels are case-insensitive: `Bug` and `bug` are the same label.
+
 ## Rank
 
 The position of an issue in a total order. Defaults to the issue's sequence number, so
@@ -129,12 +131,10 @@ what. Events accumulate and are never edited or removed, forming an issue's **ti
 An issue's current state is the authority on what is true now; the timeline is the record
 of how it got there. They are separate on purpose.
 
-## Frontier
+## Ready
 
-The set of issues that are open, unblocked, and unclaimed — the work takeable right now.
+An issue is **ready** when it is open, unblocked, and unclaimed — work anyone could take
+right now.
 
-> **Open question.** Frontier is currently the vocabulary of a *consumer* of tikka rather
-> than of tikka itself. Whether it becomes a tikka term — a named predicate in the query
-> grammar — is unsettled; see
-> [Define the shared query and filter grammar](.wayfinder/tickets/T08-query-grammar.md).
-> If it stays a consumer's word, this entry moves out of the glossary.
+Consumers may have their own word for a scoped slice of ready work (wayfinder calls its
+version the *frontier*); tikka does not adopt those words.
