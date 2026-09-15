@@ -1,6 +1,7 @@
 package tikka.daemon
 
-import cats.effect.{ExitCode, IO, IOApp, Resource}
+import cats.effect.{ExitCode, IO, IOApp, Ref, Resource}
+import cats.syntax.all.*
 import com.comcast.ip4s.*
 import org.http4s.ember.server.EmberServerBuilder
 import org.typelevel.log4cats.LoggerFactory
@@ -17,7 +18,8 @@ object Main extends IOApp:
         report <- Resource.eval(Store.migrate(home))
         store  <- Store.resource(home)
         core    = Core(store)
-        app     = Http.hardened(home.port)(Http.routes(core)).orNotFound
+        sessions <- Resource.eval(Ref.of[IO, Map[String, String]](Map.empty))
+        app     = Http.hardened(home.port)(Http.routes(core) <+> Mcp.routes(core, sessions)).orNotFound
         _      <- EmberServerBuilder.default[IO]
                     .withHost(ipv4"127.0.0.1")
                     .withPort(Port.fromInt(home.port).get)
