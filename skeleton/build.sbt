@@ -35,8 +35,21 @@ lazy val daemon = project
       "org.tpolecat"                  %% "doobie-core"         % "1.0.0-RC12",
       "org.xerial"                     % "sqlite-jdbc"         % "3.53.4.0",
       "org.slf4j"                      % "slf4j-nop"           % "2.0.17",
+      "org.typelevel"                 %% "log4cats-noop"       % "2.7.1",
     ),
     fork := true,
+    assembly / assemblyMergeStrategy := {
+      case PathList("META-INF", "versions", _, "module-info.class") => MergeStrategy.discard
+      case PathList("module-info.class")                           => MergeStrategy.discard
+      case x => (assembly / assemblyMergeStrategy).value(x)
+    },
+    Compile / resourceGenerators += Def.task {
+      // Production UI: embed fullLinkJS output in the jar under /ui.
+      val out  = (ui / Compile / fullLinkJSOutput).value
+      val dest = (Compile / resourceManaged).value / "ui"
+      IO.copyDirectory(out, dest)
+      (dest ** "*").get().filter(_.isFile)
+    }.taskValue,
   )
 
 lazy val ui = project
