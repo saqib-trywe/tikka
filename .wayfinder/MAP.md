@@ -64,11 +64,13 @@ says otherwise. Research tickets call `research`. The walking skeleton calls
   as http4s routes but all trail the 2026-07-28 spec; a tapir endpoint shared across JVM and
   Scala.js gives Laminar a typed client; cats-effect starts in single-digit milliseconds on Scala
   Native, so the CLI can stay on the Typelevel stack.
+- [Choose the persistence engine](tickets/T03-persistence-engine.md): SQLite through doobie with
+  hand-written SQL; readable in `sqlite3` without tikka; one serialized writer with every commit
+  synced; graph invariants checked in code inside the transaction; derived state never stored
+  except mentions; substring text search; decimal ranks.
 
 ## Not yet specified
 
-- **Event log schema** — what an event records, how much an update coalesces into one
-  event, and how the timeline reads in the UI. Waits on the persistence engine.
 - **Body and mention conventions** — how `TIK-nn` is detected in markdown without
   false positives, whether mentions are rendered as live links, and what a mention of an
   id that does not exist yet means once that issue is created.
@@ -82,7 +84,8 @@ says otherwise. Research tickets call `research`. The walking skeleton calls
 - **Seeding the acceptance test** — actually moving this map onto tikka once it runs.
   Depends on nearly everything above.
 - **Export and durability** — whether the store can be dumped to plain files, which is
-  the answer to "what if the daemon won't start."
+  the answer to "what if the daemon won't start." The store is already readable in `sqlite3`, and
+  `VACUUM INTO` gives an atomic snapshot; what is open is whether that suffices.
 
 ## Out of scope
 

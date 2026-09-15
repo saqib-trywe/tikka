@@ -24,7 +24,14 @@ distinction, which keeps tikka ignorant of the vocabulary of whatever is using i
 ### Issue id
 
 A project key plus a monotonic integer: `TIK-42`. Assigned once, never reused, never
-changed. Chosen to be speakable aloud and typeable into a command line.
+changed. Numbers increase in creation order; they are not promised to be gapless. Chosen to be speakable aloud and typeable into a command line.
+
+### Version
+
+A counter on each issue that moves only when its title, body or labels change. A writer
+may state the version it last read; if the issue has moved on, the write is refused
+rather than silently overwriting. Claims, comments, status changes and edges do not move
+it — they have their own guards, or never conflict.
 
 ## Status
 
@@ -121,6 +128,9 @@ order is deterministic without anyone setting it, and can be overwritten to reor
 
 Rank is not priority. Tikka has no priority.
 
+A rank is any decimal number, so an issue can be placed between two others (3.5 sits
+between 3 and 4) without moving either.
+
 Ranks need not be unique; issues with equal rank are ordered by issue number.
 
 ## Event
@@ -130,6 +140,9 @@ what. Events accumulate and are never edited or removed, forming an issue's **ti
 
 An issue's current state is the authority on what is true now; the timeline is the record
 of how it got there. They are separate on purpose.
+
+An issue's **updated** time is the time of the latest event on its timeline — a comment or
+a claim updates an issue as much as a title change does.
 
 ## Ready
 

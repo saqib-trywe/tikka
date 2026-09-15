@@ -53,3 +53,11 @@ list/search tools take a single `query` string in the shared syntax, documented 
 tool description; results are cursor-paged (default 50, max 200); query errors name the bad
 token and suggest alternatives. `ready` is a query predicate — decide whether a dedicated
 `frontier`-style tool still earns its place, or whether search with `ready` suffices.
+
+**Inherited from [Choose the persistence engine](T03-persistence-engine.md):**
+the version moves only on title, body and label changes. Rank is any decimal number, so a
+"move between" tool computes a midpoint and can run out of precision in theory (refused, conflict
+named). Writes run one at a time and every write is atomic with its events. No write accepts a
+timestamp. Cursors guarantee that unchanged issues appear exactly once, and issues whose sort key
+moves mid-paging may repeat or vanish, so document that in paging tool descriptions. `text:` is a
+case-insensitive substring match.

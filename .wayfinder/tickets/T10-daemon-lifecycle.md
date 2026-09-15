@@ -35,3 +35,9 @@ often trips the lifecycle.
 **Inherited from [Define the shared query and filter grammar](T08-query-grammar.md):**
 an unscoped query defaults to the bound project. Decide what "bound" means where there is no
 working directory — notably MCP clients — and what an unscoped query does then.
+
+**Inherited from [Choose the persistence engine](T03-persistence-engine.md):**
+the store is one SQLite file under `~/.tikka/`, opened in WAL mode with a single write connection,
+so a second daemon on the same file would contend for the writer; decide how it is refused
+(a lock file, or the port). Schema upgrades are yours; SQLite's `user_version` pragma makes a
+migration runner cheap if you want one.

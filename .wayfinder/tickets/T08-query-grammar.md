@@ -117,6 +117,10 @@ all surfaces, default 50, maximum 200; responses carry an opaque next cursor and
 more exists. Rejected offset paging because agents write while other agents page, which
 shifts offsets and skips or duplicates results. The UI pages by "load more".
 
+> **Refined by [Choose the persistence engine](T03-persistence-engine.md):** the guarantee is
+> that issues which did not change while paging appear exactly once; an issue whose sort key
+> moves mid-paging may repeat or be missed.
+
 ### Times
 
 `-before`/`-after` suffixes taking a relative duration (`30m`, `2h`, `3d` = that long ago)

@@ -4,7 +4,7 @@ title: Walking skeleton — surfaces over one core
 type: prototype
 status: open
 assignee: null
-blocked-by: [T03, T04, T05, T06]
+blocked-by: [T03, T04, T05, T06, T14]
 ---
 
 ## Question
