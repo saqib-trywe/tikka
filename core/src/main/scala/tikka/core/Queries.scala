@@ -36,7 +36,7 @@ private[core] final case class IssueRecord(
 
 /** Every statement the core runs, as `ConnectionIO` so a mutation and its event share one transaction. */
 private[core] object Queries:
-  private val issueColumns =
+  private[core] val issueColumns =
     fr"id, project_key, number, title, body, resolution, closed_at, assignee, claimed_at, rank, version, parent_id, created"
 
   // Projects
