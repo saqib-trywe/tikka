@@ -38,6 +38,7 @@ enum DomainError:
   case NotFound(id: IssueId)
   case UnknownProject(requested: ProjectKey, known: List[ProjectKey])
   case InvalidArgument(argument: String, reason: String)
+  case InvalidQuery(token: String, reason: String, suggestions: List[String])
   case StaleVersion(current: Version, title: Option[Title], body: Option[Body], labels: Option[List[Label]])
   case EditMismatch(edit: BodyEdit, kind: EditMismatchKind)
   case ClaimConflict(holder: Assignee, since: Option[Timestamp])
@@ -57,6 +58,7 @@ object DomainError:
       case NotFound(_)              => ErrorCode.NotFound
       case UnknownProject(_, _)     => ErrorCode.UnknownProject
       case InvalidArgument(_, _)    => ErrorCode.InvalidArgument
+      case InvalidQuery(_, _, _)    => ErrorCode.InvalidQuery
       case StaleVersion(_, _, _, _) => ErrorCode.StaleVersion
       case EditMismatch(_, _)       => ErrorCode.EditMismatch
       case ClaimConflict(_, _)      => ErrorCode.ClaimConflict

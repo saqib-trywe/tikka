@@ -24,16 +24,16 @@ object Export:
         val core = Core(opened, Clock.system)
         for
           projects <- core.projects
-          issues <- projects.flatTraverse(project => issuesOf(core, project.key))
+          issues <- projects.flatTraverse(project => issuesOf(opened, core, project.key))
           events <- core.allEvents
           lines = projects.map(record("project", _)) ++ issues.map(record("issue", _)) ++ events.map(record("event", _))
           _ <- write(destination, lines)
         yield lines.size
 
-  private def issuesOf(core: Core, project: ProjectKey): IO[List[IssueDetail]] =
-    core
-      .list(ListFilter.InProject(project))
-      .flatMap(_.traverse(row => core.get(row.id, includeEvents = false)))
+  private def issuesOf(store: Store, core: Core, project: ProjectKey): IO[List[IssueDetail]] =
+    store
+      .reading(Queries.issuesIn(project))
+      .flatMap(_.traverse(record => core.get(record.id, includeEvents = false)))
       .map(_.collect { case Right(view) => view.detail })
 
   private def record[A: io.circe.Encoder](kind: String, value: A): String =

@@ -49,6 +49,16 @@ trait Builders:
         .get(issue, includeEvents = true)
         .map(_.fold(error => sys.error(error.toString), _.events.fold(Nil)(_.events)))
 
+    /** Runs a query and fails the test if the grammar refused it. */
+    def find(query: String): IO[List[IssueId]] =
+      core.page(query).map(_.issues.map(_.id))
+
+    def page(query: String, cursor: Option[String] = None, limit: Int = 50): IO[SearchPage] =
+      core.search(query, None, cursor, limit).map(_.fold(error => sys.error(error.toString), identity))
+
+    def refuse(query: String): IO[DomainError] =
+      core.search(query, None, None, 50).map(_.fold(identity, page => sys.error(s"expected a rejection: $page")))
+
     def blockOn(issue: IssueId, blocker: IssueId): IO[Either[DomainError, Written]] =
       core.update(issue, UpdateIssue.nothing.copy(blockedByAdd = List(blocker)), actor)
 

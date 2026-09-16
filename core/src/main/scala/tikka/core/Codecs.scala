@@ -35,14 +35,22 @@ object Codecs:
   private def fail(reason: String): Nothing =
     throw IllegalStateException(s"the store holds a value tikka cannot read: $reason")
 
-/** The daemon's clock, the only source of time a write may use. Injected so tests can hold it still. */
+/** The daemon's clock and zone: the only source of time a write may use, and the zone a bare date in a query means.
+  * Injected so tests can hold both still.
+  */
 trait Clock:
-  def now: cats.effect.IO[Timestamp]
+  def instant: cats.effect.IO[Instant]
+
+  def zone: java.time.ZoneId
+
+  def now: cats.effect.IO[Timestamp] = instant.map(Clock.render)
 
 object Clock:
   private val format = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").withZone(ZoneOffset.UTC)
 
   def system: Clock = new Clock:
-    def now: cats.effect.IO[Timestamp] = cats.effect.IO.realTimeInstant.map(render)
+    def instant: cats.effect.IO[Instant] = cats.effect.IO.realTimeInstant
+
+    def zone: java.time.ZoneId = java.time.ZoneId.systemDefault()
 
   def render(instant: Instant): Timestamp = Timestamp.trusted(format.format(instant))
