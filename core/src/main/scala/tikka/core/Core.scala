@@ -7,12 +7,8 @@ import doobie.*
 import doobie.implicits.*
 import tikka.prose.Mentions
 import tikka.shared.*
-
-/** What M1 can read back without the query grammar, which arrives with the parser. */
-enum ListFilter:
-  case InProject(project: ProjectKey)
-  case Children(parent: IssueId)
-  case Ready(project: Option[ProjectKey])
+// doobie also has a Query; the explicit import says which one this file means.
+import tikka.shared.Query
 
 /** The rules, in one place, so every surface inherits the same ones.
   *
@@ -54,16 +50,74 @@ final class Core(store: Store, clock: Clock):
   /** The whole log, oldest first. */
   def allEvents: IO[List[Event]] = store.reading(Events.all)
 
-  def list(filter: ListFilter): IO[List[Row]] =
-    store.reading:
-      val records = filter match
-        case ListFilter.InProject(project) => Queries.issuesIn(project)
-        case ListFilter.Ready(project)     => Queries.ready(project)
-        case ListFilter.Children(parent)   =>
-          Queries
-            .issue(parent)
-            .flatMap(_.fold(List.empty[IssueRecord].pure[ConnectionIO])(r => Queries.childrenOf(r.key)))
-      records.flatMap(_.traverse(rowOf))
+  /** Runs a query written in the shared grammar. */
+  def search(
+      text: String,
+      binding: Option[ProjectKey],
+      cursor: Option[String],
+      limit: Int
+  ): IO[Either[DomainError, SearchPage]] =
+    QueryParser.parse(text) match
+      case Left(error)  => IO.pure(Left(DomainError.InvalidQuery(error.token, error.reason, error.suggestions)))
+      case Right(query) => search(query, binding, cursor, limit)
+
+  /** An unscoped query stays inside the bound project; an explicit `project:` always wins. */
+  def search(
+      query: Query,
+      binding: Option[ProjectKey],
+      cursor: Option[String],
+      limit: Int
+  ): IO[Either[DomainError, SearchPage]] =
+    val effective = scoped(query, binding)
+    clock.instant.flatMap: at =>
+      val prepared =
+        for
+          _ <- Either.cond(
+            limit >= 1 && limit <= Core.maxLimit,
+            (),
+            DomainError.InvalidArgument("limit", s"a page holds 1 to ${Core.maxLimit} issues")
+          )
+          keyset <- cursor.traverse(text => Cursor.decode(text, effective.sort))
+          where <- Search.conditions(effective, at, clock.zone)
+        yield (keyset, where)
+      prepared match
+        case Left(error)            => IO.pure(Left(error))
+        case Right((keyset, where)) => store.reading(page(effective, where, keyset, limit)).map(Right(_))
+
+  private def scoped(query: Query, binding: Option[ProjectKey]): Query =
+    binding match
+      case Some(key) if query.withoutProjectScope =>
+        query.copy(terms = Term(negated = false, Filter.Project(ProjectScope.Keys(List(key)))) +: query.terms)
+      case _ => query
+
+  private def page(query: Query, where: Fragment, keyset: Option[Search.Keyset], limit: Int): ConnectionIO[SearchPage] =
+    val after = keyset.fold(fr"1 = 1")(Search.after(query.sort, _))
+    // One row beyond the page says whether there is more, without a second count query.
+    val statement = fr"SELECT" ++ Queries.issueColumns ++ fr"FROM issue WHERE" ++ where ++ fr"AND" ++ after ++
+      Search.order(query.sort) ++ fr"LIMIT ${limit + 1}"
+    for
+      records <- statement.query[IssueRecord].to[List]
+      visible = records.take(limit)
+      rows <- visible.traverse(rowOf)
+    yield
+      val more = records.size > limit
+      val next = visible
+        .zip(rows)
+        .lastOption
+        .map((record, row) => Cursor.encode(query.sort, keysetFor(query.sort, record, row)))
+      SearchPage(query.render, rows, next.filter(_ => more), more)
+
+  private def keysetFor(sort: Sort, record: IssueRecord, row: Row): Search.Keyset =
+    val project = record.projectKey.value
+    val number = record.number.value
+    sort.field match
+      case SortField.Rank    => Search.Keyset(missing = false, record.rank.value.toString, project, number)
+      case SortField.Created => Search.Keyset(missing = false, record.created.value, project, number)
+      case SortField.Updated => Search.Keyset(missing = false, row.updated.value, project, number)
+      case SortField.Closed  =>
+        record.closedAt.fold(Search.Keyset(missing = true, "", project, number))(at =>
+          Search.Keyset(missing = false, at.value, project, number)
+        )
 
   // Writing
 
@@ -122,10 +176,11 @@ final class Core(store: Store, clock: Clock):
       _ <- ok(blockers.traverse_(blocker => Queries.addBlockEdge(blocker.key, key).void))
       _ <- ok(syncProse(key, id, command.title, body, keys))
       _ <- ok(command.comment.traverse_(text => syncCommentMentions(key, id, text, keys)))
-      _ <- ok(reindex(key, command.title, body))
       changes = createChanges(command, body, labels, parent, blockers, ranking)
       related = parent.map(_.key).toSet ++ blockers.map(_.key).toSet
       _ <- ok(Events.record(key, actor, at, EventDraft(changes, related, command.comment)))
+      // Indexed after the event: comments ride on events, so the index needs the event to exist first.
+      _ <- ok(reindex(key, command.title, body))
       row <- ok(rowByKey(key))
     yield Written(row, Version.first)
 
@@ -167,9 +222,6 @@ final class Core(store: Store, clock: Clock):
       currentBody = newBody.getOrElse(record.body)
       _ <- ok(if proseChanged then syncProse(record.key, id, currentTitle, currentBody, keys) else unit)
       _ <- ok(command.comment.traverse_(text => syncCommentMentions(record.key, id, text, keys)))
-      _ <- ok(
-        if proseChanged || command.comment.isDefined then reindex(record.key, currentTitle, currentBody) else unit
-      )
       changes = title.map(value => EventDraft.set(ChangeField.Title, Some(record.title.value), Some(value.value))) ++
         newBody.map(value => EventDraft.set(ChangeField.Body, Some(record.body.value), Some(value.value))) ++
         labelChanges ++ parentResult._1 ++ blockResult._1 ++ rankChanges
@@ -180,6 +232,10 @@ final class Core(store: Store, clock: Clock):
           at,
           EventDraft(changes.toList, parentResult._2 ++ blockResult._2, command.comment)
         )
+      )
+      // Indexed after the event: comments ride on events, so the index needs the event to exist first.
+      _ <- ok(
+        if proseChanged || command.comment.isDefined then reindex(record.key, currentTitle, currentBody) else unit
       )
       row <- ok(rowByKey(record.key))
     yield Written(row, version)
@@ -661,5 +717,11 @@ final class Core(store: Store, clock: Clock):
             case Right(value) => Right(value).pure[ConnectionIO]
         .recover:
           case Rejected(error) => Left(error)
+
+object Core:
+  /** The contract's page-size ceiling. Asking for more is refused rather than quietly clamped. */
+  val maxLimit: Int = 200
+
+  val defaultLimit: Int = 50
 
 private final case class Rejected(error: DomainError) extends RuntimeException("write rejected", null, false, false)

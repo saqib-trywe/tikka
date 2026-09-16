@@ -137,3 +137,8 @@ final case class ClosedOut(row: Row, newlyUnblocked: List[Row])
 final case class EventPage(events: List[Event], total: Int, truncated: Boolean)
 
 final case class IssueView(detail: IssueDetail, events: Option[EventPage])
+
+/** A page of search results. `effectiveQuery` shows the scoping that was actually applied, so a bound connection's
+  * results are never a mystery.
+  */
+final case class SearchPage(effectiveQuery: String, issues: List[Row], nextCursor: Option[String], hasMore: Boolean)

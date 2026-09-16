@@ -250,7 +250,7 @@ class InvariantsTest extends TempHome, Builders:
         first <- core.addTo(project, "First")
         second <- core.addTo(project, "Second")
         between <- core.add(creating("Between", project = Some(project), rank = Some(RankPlacement.Before(second))))
-        rows <- core.list(ListFilter.InProject(project))
+        rows <- core.page(s"project:${project.value}").map(_.issues)
       yield
         assertEquals(rows.map(_.rank.value), List(1.0, 1.5, 2.0))
         assertEquals(rows.map(_.id), List(first, between, second))
