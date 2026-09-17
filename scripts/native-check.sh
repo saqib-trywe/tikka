@@ -44,9 +44,17 @@ probe() {
     if kill -0 "$pid" 2>/dev/null; then
       failures=$((failures + 1))
       echo "$name: run $run hung"
-      # Ubuntu only lets a process's parent trace it, so the backtrace needs sudo there.
-      if [ "$failures" -eq 1 ] && command -v gdb >/dev/null && sudo -n true 2>/dev/null; then
-        sudo gdb -batch -p "$pid" -ex "thread apply all bt" 2>&1 | grep -E '^Thread|^#' | head -150
+      if [ "$failures" -eq 1 ]; then
+        # Is the daemon still answering? A hang on its side looks the same from the CLI.
+        echo "daemon /api/meta while hung: $(curl -s -m 3 -o /dev/null -w '%{http_code}' "http://127.0.0.1:$port/api/meta" || echo none)"
+        (ss -tan 2>/dev/null || netstat -an 2>/dev/null) | grep ":$port" || true
+        # Ubuntu only lets a process's parent trace it, so the backtrace needs sudo there.
+        if command -v gdb >/dev/null && sudo -n true 2>/dev/null; then
+          sudo gdb -batch -p "$pid" -ex "info threads" -ex "thread apply all bt" >"$TIKKA_HOME/hang.gdb" 2>&1 || true
+          head -200 "$TIKKA_HOME/hang.gdb" || true
+        else
+          echo "no gdb backtrace available"
+        fi
       fi
       kill -9 "$pid" 2>/dev/null || true
       wait "$pid" 2>/dev/null || true
