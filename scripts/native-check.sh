@@ -27,6 +27,21 @@ printf 'project = "TIK"\n' >.tikka
 "$tikka" new "Ready work"
 cd - >/dev/null
 
+# Repeated runs first, each with a timeout, so an intermittent failure reports its exit status: 124 is a hang, and
+# 128 plus a signal number is a crash (139 for SIGSEGV, 134 for SIGABRT).
+for run in $(seq 1 200); do
+  set +e
+  (cd "$repo" && timeout 20 "$tikka" search ready >/dev/null 2>"$TIKKA_HOME/search.err")
+  status=$?
+  set -e
+  if [ "$status" -ne 0 ]; then
+    echo "run $run of tikka search failed with exit status $status"
+    cat "$TIKKA_HOME/search.err"
+    exit 1
+  fi
+done
+echo "200 runs of tikka search succeeded"
+
 # The budget from "Choose the CLI approach": search against a running daemon, under 100 ms at the median.
 (cd "$repo" && "$OLDPWD/scripts/startup-gate.sh" 100 "$tikka" search ready)
 
