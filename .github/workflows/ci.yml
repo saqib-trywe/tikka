@@ -50,7 +50,12 @@ jobs:
       - name: Daemon jar embeds the UI and runs
         run: |
           unzip -l target/dist/tikka-daemon.jar | grep -q ' ui/main.js$'
-          java --enable-native-access=ALL-UNNAMED -jar target/dist/tikka-daemon.jar
+          java --enable-native-access=ALL-UNNAMED -jar target/dist/tikka-daemon.jar --version
+      - uses: actions/upload-artifact@v7
+        with:
+          name: tikka-daemon
+          path: target/dist/tikka-daemon.jar
+          retention-days: 3
 
   js:
     runs-on: ubuntu-24.04
@@ -90,17 +95,23 @@ jobs:
         run: scripts/startup-gate.sh 100 "$(find target/out -path '*native*' -type f -name tikka)" --version
 
   conformance:
+    needs: jvm
     runs-on: ubuntu-24.04
     steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
       - uses: actions/setup-node@v7
         with:
           node-version: "22"
-      # Until the MCP adapter exists, prove the pinned suite installs and carries both revisions.
-      - name: Pinned suite covers both revisions
-        run: |
-          suite() { npx -y "@modelcontextprotocol/conformance@${CONFORMANCE_VERSION}" "$@"; }
-          # Captured first: `grep -q` exiting early would fail the pipe under pipefail.
-          legacy="$(suite list --server --spec-version 2025-11-25)"
-          modern="$(suite list --server --spec-version 2026-07-28)"
-          grep -q server-initialize <<<"$legacy"
-          grep -q server-stateless <<<"$modern"
+      - uses: actions/download-artifact@v8
+        with:
+          name: tikka-daemon
+          path: target/dist
+      # A real daemon, both protocol revisions, every check enforced except those conformance-baseline.yml explains.
+      - run: scripts/conformance.sh target/dist/tikka-daemon.jar
+      - name: Daemon log
+        if: failure()
+        run: cat target/conformance-home/daemon.log

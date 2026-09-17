@@ -36,11 +36,15 @@ object Main extends IOApp:
             _ <- refuseCorrupt(home, check)
             moved <- Migrations.run(home.store, Some(home.backups))
             _ <- moved.traverse(path => IO.println(s"migrated, snapshot at $path"))
-            day <- IO.realTimeInstant.map(_.toString.take(10))
-            daily <- Backups.daily(home, day)
-            _ <- daily.traverse(path => IO.println(s"snapshot at $path"))
-            _ <- IO.println(s"store ready at ${home.store} (schema v${Migrations.latest})")
-          yield ExitCode.Success
+            code <- serve(home)
+          yield code
+
+  /** Runs until stopped, taking daily snapshots in the background. */
+  private def serve(home: Home): IO[ExitCode] =
+    (Daemon.resource(home) <* Backups.schedule(home).background).use: daemon =>
+      IO.println(
+        s"tikka daemon ${BuildVersion.current.value} serving http://${daemon.server.addressIp4s} (store ${home.store})"
+      ) *> IO.never.as(ExitCode.Success)
 
   private def exportTo(file: Path): IO[ExitCode] =
     Home.load.flatMap: home =>

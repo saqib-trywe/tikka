@@ -1,0 +1,13 @@
+# Checks the pinned MCP conformance suite cannot pass against tikka, each for a reason that is not a defect.
+# Listed per check, so every other check in these scenarios is still enforced.
+server:
+  # Not testable: these need the suite's own diagnostic tools (test_missing_capability, test_logging_tool,
+  # test_streaming_elicitation), which a real server does not expose.
+  - server-stateless:sep-2575-server-rejects-undeclared-capability
+  - server-stateless:sep-2575-missing-capability-http-400
+  - server-stateless:sep-2575-http-server-no-independent-requests-on-stream
+  - server-stateless:sep-2575-server-no-log-without-loglevel
+  # tikka is tools only by contract: no prompts and no resources, so there is nothing to cache.
+  - caching:sep-2549-prompts-list-caching-hints
+  - caching:sep-2549-resources-list-caching-hints
+  - caching:sep-2549-resources-templates-list-caching-hints

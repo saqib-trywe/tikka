@@ -142,3 +142,6 @@ final case class IssueView(detail: IssueDetail, events: Option[EventPage])
   * results are never a mystery.
   */
 final case class SearchPage(effectiveQuery: String, issues: List[Row], nextCursor: Option[String], hasMore: Boolean)
+
+/** A slice of the event log, oldest first, and whether more follows it. */
+final case class EventSlice(events: List[Event], hasMore: Boolean)

@@ -119,6 +119,9 @@ opaque type Version = Int
 object Version:
   val first: Version = 1
 
+  def parse(value: Int): Either[String, Version] =
+    if value >= 1 then Right(value) else Left(s"$value is not a version: versions start at 1")
+
   private[tikka] def trusted(value: Int): Version = value
 
   extension (version: Version)

@@ -107,7 +107,16 @@ lazy val daemon = project
       "com.softwaremill.sttp.tapir" %% "tapir-http4s-server" % tapirV,
       "org.http4s" %% "http4s-ember-server" % http4sV,
       "org.http4s" %% "http4s-dsl" % http4sV,
-      "org.http4s" %% "http4s-circe" % http4sV
+      "org.http4s" %% "http4s-circe" % http4sV,
+      // tapir's Schema becomes each MCP tool's inputSchema and outputSchema.
+      "com.softwaremill.sttp.tapir" %% "tapir-apispec-docs" % tapirV,
+      "com.softwaremill.sttp.apispec" %% "jsonschema-circe" % "0.11.10",
+      "com.softwaremill.sttp.tapir" %% "tapir-sttp-client4" % tapirV % Test,
+      "com.softwaremill.sttp.client4" %% "cats" % sttpV % Test,
+      "org.http4s" %% "http4s-ember-client" % http4sV % Test,
+      "com.networknt" % "json-schema-validator" % "3.0.7" % Test,
+      // SLF4J 2 otherwise prints a no-provider warning at startup.
+      "org.slf4j" % "slf4j-nop" % "2.0.17"
     ) ++ testDependencies,
     fork := true,
     // sqlite-jdbc loads native code, which JDK 22+ warns about without this.
