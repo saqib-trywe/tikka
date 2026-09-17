@@ -71,6 +71,10 @@ Walking skeleton — surfaces over one core (its amendments).
 Move the remaining milestones into tikka as issues, as a wayfinder-style map per Confirm wayfinder fits tikka's
 contract, and work them through tikka's own MCP surface from here on.
 
+**Reached 2026-09-17.** The map is TIK-1, *Build tikka's first release*, with M4 and M5 as its children, in a dev
+home at `.tikka-dev/` (gitignored) served on port 7117. The repository is bound to project `TIK` through `.tikka` and
+the project-scoped MCP entry in `.mcp.json`. From here, a milestone's status lives in tikka, not in this file.
+
 ### M4: Native CLI
 
 Every command, the `$EDITOR` flow, bulk close, `project new`, `init`, the `daemon` subcommands (install, run, start, stop,
