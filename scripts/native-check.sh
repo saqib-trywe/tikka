@@ -29,9 +29,11 @@ cd - >/dev/null
 
 # Repeated runs first, each with a timeout, so an intermittent failure reports its exit status: 124 is a hang, and
 # 128 plus a signal number is a crash (139 for SIGSEGV, 134 for SIGABRT).
+limit=""
+if command -v timeout >/dev/null; then limit="timeout 20"; fi
 for run in $(seq 1 200); do
   set +e
-  (cd "$repo" && timeout 20 "$tikka" search ready >/dev/null 2>"$TIKKA_HOME/search.err")
+  (cd "$repo" && $limit "$tikka" search ready >/dev/null 2>"$TIKKA_HOME/search.err")
   status=$?
   set -e
   if [ "$status" -ne 0 ]; then
