@@ -47,7 +47,8 @@ lazy val root = project
     daemon,
     ui,
     cli.jvm,
-    cli.native
+    cli.native,
+    integration
   )
 
 // The contract: domain types, tapir endpoints, codecs, query parser, text renderer, line diff. No business logic.
@@ -160,6 +161,8 @@ lazy val cli = crossProject(JVMPlatform, NativePlatform)
   .settings(
     libraryDependencies ++= Seq(
       "org.typelevel" %% "cats-effect" % catsEffectV,
+      "co.fs2" %% "fs2-io" % fs2V,
+      "com.monovore" %% "decline" % "2.6.2",
       "com.softwaremill.sttp.tapir" %% "tapir-sttp-client4" % tapirV,
       "com.softwaremill.sttp.client4" %% "cats" % sttpV
     ) ++ testDependencies
@@ -170,6 +173,17 @@ lazy val cli = crossProject(JVMPlatform, NativePlatform)
   .nativeSettings(
     pinAppleClang,
     nativeConfig ~= (_.withBaseName("tikka"))
+  )
+
+// The CLI driven against a real daemon. JVM-only, so neither `cli` nor `daemon` has to depend on the other.
+lazy val integration = project
+  .in(file("integration"))
+  .dependsOn(daemon % "compile->compile;test->test", cli.jvm % "compile->compile;test->test")
+  .settings(
+    publish / skip := true,
+    libraryDependencies ++= testDependencies,
+    Test / fork := true,
+    Test / javaOptions += "--enable-native-access=ALL-UNNAMED"
   )
 
 // Links the release CLI binary that the startup gate measures, then drops the `set` so later links in the same sbt server
