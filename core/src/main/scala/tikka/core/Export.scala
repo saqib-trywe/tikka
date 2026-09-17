@@ -5,7 +5,7 @@ import cats.syntax.all.*
 import io.circe.Json
 import io.circe.syntax.*
 import tikka.shared.*
-import tikka.shared.Codec.given
+import tikka.shared.Wire
 
 import java.nio.file.Files
 import java.nio.file.Path
@@ -26,7 +26,9 @@ object Export:
           projects <- core.projects
           issues <- projects.flatTraverse(project => issuesOf(opened, core, project.key))
           events <- core.allEvents
-          lines = projects.map(record("project", _)) ++ issues.map(record("issue", _)) ++ events.map(record("event", _))
+          lines = projects.map(project => record("project", Wire.ProjectOut.from(project))) ++
+            issues.map(detail => record("issue", Wire.IssueOut.from(IssueView(detail, None)))) ++
+            events.map(event => record("event", Wire.EventOut.from(event)))
           _ <- write(destination, lines)
         yield lines.size
 

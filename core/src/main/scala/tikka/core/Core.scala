@@ -14,8 +14,10 @@ import tikka.shared.Query
   *
   * Invariants are checked as **state** invariants: any write that would leave the data violating one is rejected,
   * whatever kind of write it is. The checks run inside the write transaction, where nothing else can interleave.
+  *
+  * `changed` runs after every committed write, so live views learn there is something new without polling.
   */
-final class Core(store: Store, clock: Clock):
+final class Core(store: Store, clock: Clock, changed: IO[Unit] = IO.unit):
   private type Tx[A] = EitherT[ConnectionIO, DomainError, A]
 
   private val timelineLimit = 50
@@ -49,6 +51,32 @@ final class Core(store: Store, clock: Clock):
 
   /** The whole log, oldest first. */
   def allEvents: IO[List[Event]] = store.reading(Events.all)
+
+  /** Every event after a sequence number, across all issues, oldest first: what a live view resumes from. */
+  def feed(after: Long, limit: Int): IO[Either[DomainError, EventSlice]] =
+    withinLimit(limit).traverse: _ =>
+      store.reading(Events.after(after, limit + 1)).map(slice(limit))
+
+  /** One issue's timeline after a sequence number, with full before-and-after text. */
+  def history(id: IssueId, after: Long, limit: Int): IO[Either[DomainError, EventSlice]] =
+    withinLimit(limit) match
+      case Left(error) => IO.pure(Left(error))
+      case Right(_)    =>
+        store.reading:
+          (for
+            record <- load(id)
+            events <- ok(Events.timelineAfter(record.key, after, limit + 1))
+          yield slice(limit)(events)).value
+
+  private def slice(limit: Int)(events: List[Event]): EventSlice =
+    EventSlice(events.take(limit), events.size > limit)
+
+  private def withinLimit(limit: Int): Either[DomainError, Unit] =
+    Either.cond(
+      limit >= 1 && limit <= Core.maxLimit,
+      (),
+      DomainError.InvalidArgument("limit", s"a page holds 1 to ${Core.maxLimit} items")
+    )
 
   /** Runs a query written in the shared grammar. */
   def search(
@@ -717,6 +745,7 @@ final class Core(store: Store, clock: Clock):
             case Right(value) => Right(value).pure[ConnectionIO]
         .recover:
           case Rejected(error) => Left(error)
+        .flatTap(result => changed.whenA(result.isRight))
 
 object Core:
   /** The contract's page-size ceiling. Asking for more is refused rather than quietly clamped. */

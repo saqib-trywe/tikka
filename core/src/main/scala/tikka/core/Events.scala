@@ -79,15 +79,28 @@ private[core] object Events:
       val (seq, at, actor, project, number, comment) = row
       Event(seq, at, actor, IssueId(project, number), rowChanges, comment)
 
-  /** Every event in the store, oldest first. The export writes these; the HTTP feed will read them by sequence. */
+  /** Every event in the store, oldest first. The export writes these. */
   def all: ConnectionIO[List[Event]] =
+    withChanges(fr"ORDER BY e.seq")
+
+  /** Events after a sequence number, across all issues. */
+  def after(seq: Long, limit: Int): ConnectionIO[List[Event]] =
+    withChanges(fr"WHERE e.seq > $seq ORDER BY e.seq LIMIT $limit")
+
+  /** One issue's timeline after a sequence number, related events included. */
+  def timelineAfter(key: Long, seq: Long, limit: Int): ConnectionIO[List[Event]] =
+    withChanges(fr"""WHERE e.seq > $seq
+                       AND (e.issue_id = $key OR e.seq IN (SELECT event_seq FROM event_related WHERE issue_id = $key))
+                     ORDER BY e.seq LIMIT $limit""")
+
+  private def withChanges(rest: Fragment): ConnectionIO[List[Event]] =
     for
-      rows <- sql"""SELECT e.seq, e.at, e.actor, i.project_key, i.number, e.comment
-                    FROM event e JOIN issue i ON i.id = e.issue_id ORDER BY e.seq"""
+      rows <- (fr"""SELECT e.seq, e.at, e.actor, i.project_key, i.number, e.comment
+                    FROM event e JOIN issue i ON i.id = e.issue_id""" ++ rest)
         .query[(EventSeq, Timestamp, Actor, ProjectKey, IssueNumber, Option[String])]
         .to[List]
-      withChanges <- rows.traverse(row => changesOf(row._1).map(row -> _))
-    yield withChanges.map: (row, changes) =>
+      loaded <- rows.traverse(row => changesOf(row._1).map(row -> _))
+    yield loaded.map: (row, changes) =>
       val (seq, at, actor, project, number, comment) = row
       Event(seq, at, actor, IssueId(project, number), changes, comment)
 
