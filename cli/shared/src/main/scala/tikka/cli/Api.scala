@@ -55,7 +55,7 @@ final class Api(backend: Backend[IO], settings: Settings):
 
   def meta: IO[Either[Failure, MetaOut]] = call(Endpoints.meta, ())
 
-  def projects: IO[Either[Failure, List[ProjectOut]]] = call(Endpoints.projects, ())
+  def projects: IO[Either[Failure, List[ProjectSummaryOut]]] = call(Endpoints.projects, ())
 
   def createProject(body: ProjectIn): IO[Either[Failure, ProjectOut]] = call(Endpoints.createProject, body)
 

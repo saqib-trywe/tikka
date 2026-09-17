@@ -97,6 +97,7 @@ class WireTest extends munit.FunSuite:
       "2026-09-15T10:02:00.000Z",
       "mcp:claude-code",
       "TIK-42",
+      Nil,
       List(ChangeOut("body", "set", Some("old line"), Some("new line")), ChangeOut("label", "add", None, Some("bug"))),
       Some("tidying")
     )

@@ -74,10 +74,10 @@ private[core] object Events:
                     ORDER BY e.seq DESC LIMIT $limit"""
         .query[(EventSeq, Timestamp, Actor, ProjectKey, IssueNumber, Option[String])]
         .to[List]
-      changes <- rows.reverse.traverse(row => changesOf(row._1).map(row -> _))
-    yield changes.map: (row, rowChanges) =>
+      loaded <- rows.reverse.traverse(row => (changesOf(row._1), relatedTo(row._1)).mapN((c, r) => (row, c, r)))
+    yield loaded.map: (row, rowChanges, related) =>
       val (seq, at, actor, project, number, comment) = row
-      Event(seq, at, actor, IssueId(project, number), rowChanges, comment)
+      Event(seq, at, actor, IssueId(project, number), related, rowChanges, comment)
 
   /** Every event in the store, oldest first. The export writes these. */
   def all: ConnectionIO[List[Event]] =
@@ -99,10 +99,17 @@ private[core] object Events:
                     FROM event e JOIN issue i ON i.id = e.issue_id""" ++ rest)
         .query[(EventSeq, Timestamp, Actor, ProjectKey, IssueNumber, Option[String])]
         .to[List]
-      loaded <- rows.traverse(row => changesOf(row._1).map(row -> _))
-    yield loaded.map: (row, changes) =>
+      loaded <- rows.traverse(row => (changesOf(row._1), relatedTo(row._1)).mapN((c, r) => (row, c, r)))
+    yield loaded.map: (row, changes, related) =>
       val (seq, at, actor, project, number, comment) = row
-      Event(seq, at, actor, IssueId(project, number), changes, comment)
+      Event(seq, at, actor, IssueId(project, number), related, changes, comment)
+
+  private def relatedTo(seq: EventSeq): ConnectionIO[List[IssueId]] =
+    sql"""SELECT i.project_key, i.number FROM event_related r JOIN issue i ON i.id = r.issue_id
+          WHERE r.event_seq = $seq ORDER BY i.project_key, i.number"""
+      .query[(ProjectKey, IssueNumber)]
+      .map(IssueId.apply)
+      .to[List]
 
   private def changesOf(seq: EventSeq): ConnectionIO[List[Change]] =
     sql"SELECT field, op, old, new FROM change WHERE event_seq = $seq ORDER BY ordinal"

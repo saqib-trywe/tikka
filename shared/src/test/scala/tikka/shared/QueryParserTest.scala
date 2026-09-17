@@ -44,7 +44,8 @@ class QueryParserTest extends munit.FunSuite:
     assertEquals(filters("label:wayfinder:" + "*"), List(Filter.Label(List(NameMatch.Prefix("wayfinder:")))))
 
   test("edge and mention filters take issue ids"):
-    assertEquals(filters("parent:TIK-1"), List(Filter.Parent(List(id("TIK-1")))))
+    assertEquals(filters("parent:TIK-1"), List(Filter.Parent(List(ParentMatch.Of(id("TIK-1"))))))
+    assertEquals(filters("parent:none"), List(Filter.Parent(List(ParentMatch.Nobody))))
     assertEquals(filters("under:TIK-1"), List(Filter.Under(List(id("TIK-1")))))
     assertEquals(filters("blocks:TIK-2"), List(Filter.Blocks(List(id("TIK-2")))))
     assertEquals(filters("blocked-by:TIK-3"), List(Filter.BlockedBy(List(id("TIK-3")))))
@@ -109,6 +110,7 @@ class QueryParserTest extends munit.FunSuite:
       "label:wayfinder:" + "*",
       "assignee:saqib/" + "*",
       "parent:TIK-1 under:TIK-2 blocks:TIK-3 blocked-by:TIK-4",
+      "parent:none",
       "mentions:TIK-5 mentioned-by:TIK-6 id:TIK-7,TIK-8",
       "blocked unblocked",
       "claimed-before:3d updated-after:2026-09-16",

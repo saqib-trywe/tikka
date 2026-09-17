@@ -47,6 +47,21 @@ private[core] object Queries:
       .map(Project.apply)
       .to[List]
 
+  /** Each project with how many issues are open, and how many are ready: open, unclaimed and unblocked. */
+  def projectCounts: ConnectionIO[List[(Project, Int, Int)]] =
+    sql"""SELECT p.key, p.name, p.created,
+                 (SELECT COUNT(*) FROM issue i WHERE i.project_key = p.key AND i.status = 'open'),
+                 (SELECT COUNT(*) FROM issue i WHERE i.project_key = p.key AND i.status = 'open' AND i.assignee IS NULL
+                    AND NOT EXISTS (SELECT 1 FROM block_edge b JOIN issue blocker ON blocker.id = b.blocker_id
+                                    WHERE b.blocked_id = i.id AND blocker.status = 'open'))
+          FROM project p ORDER BY p.key"""
+      .query[(ProjectKey, String, Timestamp, Int, Int)]
+      .map((key, name, created, open, ready) => (Project(key, name, created), open, ready))
+      .to[List]
+
+  def latestEvent: ConnectionIO[Long] =
+    sql"SELECT COALESCE(MAX(seq), 0) FROM event".query[Long].unique
+
   def projectKeys: ConnectionIO[Set[ProjectKey]] =
     sql"SELECT key FROM project".query[ProjectKey].to[List].map(_.toSet)
 

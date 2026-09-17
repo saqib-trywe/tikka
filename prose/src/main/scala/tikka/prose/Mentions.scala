@@ -49,12 +49,19 @@ object Mentions:
     case internal: InternalTarget => internal.underlying.toString
 
   private def idsIn(source: String): Seq[IssueId] =
-    val bare = token
+    val linked = linkPath.findAllMatchIn(source).map(_.group(1)).flatMap(text => IssueId.parse(text).toOption)
+    tokens(source).map(_.id) ++ linked
+
+  /** A bare id in running text, with where it sits, so a renderer can link exactly what detection counted. */
+  final case class Token(start: Int, end: Int, id: IssueId)
+
+  /** Every bare id in `source` that passes the boundary rule, in order. */
+  def tokens(source: String): List[Token] =
+    token
       .findAllMatchIn(source)
       .filter(candidate => boundedLeft(source, candidate.start) && boundedRight(source, candidate.end))
-      .map(_.matched)
-    val linked = linkPath.findAllMatchIn(source).map(_.group(1))
-    (bare ++ linked).flatMap(text => IssueId.parse(text).toOption).toSeq
+      .flatMap(candidate => IssueId.parse(candidate.matched).toOption.map(Token(candidate.start, candidate.end, _)))
+      .toList
 
   /** The characters either side of a token must not be letters, digits, `_` or `-`. */
   private def boundedLeft(source: String, start: Int): Boolean =

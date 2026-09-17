@@ -75,6 +75,7 @@ class EventsTest extends TempHome, Builders:
       yield
         assertEquals(events.size, 2)
         assertEquals(events.last.subject, blocker)
+        assertEquals(events.last.related, List(follower), "the event names the issue it unblocked")
         assertEquals(events.last.changes.map(_.field), List(ChangeField.Status, ChangeField.Resolution))
 
   home.test("a title change records the text either side of it"): directory =>

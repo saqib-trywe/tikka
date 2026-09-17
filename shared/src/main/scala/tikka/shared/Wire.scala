@@ -112,6 +112,7 @@ object Wire:
       at: String,
       actor: String,
       issue: String,
+      related: List[String],
       changes: List[ChangeOut],
       comment: Option[String]
   ) derives ConfiguredCodec,
@@ -123,6 +124,7 @@ object Wire:
       event.at.value,
       event.actor.render,
       event.subject.render,
+      event.related.map(_.render),
       event.changes.map(ChangeOut.from),
       event.comment
     )
@@ -221,7 +223,11 @@ object Wire:
   object ProjectOut:
     def from(project: Project): ProjectOut = ProjectOut(project.key.value, project.name, project.created.value)
 
-  final case class MetaOut(version: String, protocols: List[String]) derives ConfiguredCodec, Schema
+  /** `latest_event` is where a live view starts following, so it never replays history it already has. */
+  final case class MetaOut(version: String, protocols: List[String], latestEvent: Long) derives ConfiguredCodec, Schema
+
+  /** A project as the project list shows it, with its open and ready counts. */
+  final case class ProjectSummaryOut(key: String, name: String, open: Int, ready: Int) derives ConfiguredCodec, Schema
 
   final case class FeedOut(events: List[EventOut], nextAfter: Long, hasMore: Boolean) derives ConfiguredCodec, Schema
 

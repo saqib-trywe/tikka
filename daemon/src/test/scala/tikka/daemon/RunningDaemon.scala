@@ -46,12 +46,12 @@ final case class Live(home: Home, daemon: Daemon, client: Client[IO]):
           (response.status.code, parse(text).getOrElse(Json.fromString(text)))
 
 trait RunningDaemon extends DaemonFixtures:
-  def live[A](value: Home)(use: Live => IO[A]): IO[A] =
+  def live[A](value: Home, uiDirectory: Option[java.nio.file.Path] = None)(use: Live => IO[A]): IO[A] =
     val home = value.copy(config = DaemonConfig(Port.parse(freePort().toLong).fold(sys.error, identity)))
     val running =
       for
         _ <- Resource.eval(Migrations.run(home.store, Some(home.backups)))
-        daemon <- Daemon.resource(home)
+        daemon <- Daemon.resource(home, uiDirectory = uiDirectory)
         client <- EmberClientBuilder.default[IO].build
       yield Live(home, daemon, client)
     running.use(use)

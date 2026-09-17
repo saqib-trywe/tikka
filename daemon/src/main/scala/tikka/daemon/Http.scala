@@ -162,9 +162,11 @@ object Http:
           FeedOut(slice.events.map(EventOut.from), slice.events.lastOption.fold(from)(_.seq.value), slice.hasMore)
     ,
     Endpoints.meta.serverLogic[IO]: _ =>
-      IO.pure(Right(MetaOut(BuildVersion.current.value, Mcp.supportedVersions))),
+      core.latestEvent.map(latest => Right(MetaOut(BuildVersion.current.value, Mcp.supportedVersions, latest))),
     Endpoints.projects.serverLogic[IO]: _ =>
-      core.projects.map(projects => Right(projects.map(ProjectOut.from))),
+      core.projectCounts.map(counts =>
+        Right(counts.map((project, open, ready) => ProjectSummaryOut(project.key.value, project.name, open, ready)))
+      ),
     Endpoints.createProject.serverLogic[IO]: body =>
       run:
         for

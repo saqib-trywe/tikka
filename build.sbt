@@ -131,11 +131,13 @@ lazy val daemon = project
       case PathList("module-info.class")                            => MergeStrategy.discard
       case other                                                    => (assembly / assemblyMergeStrategy).value(other)
     },
-    // Production UI: the fullLinkJS output is embedded in the jar under /ui.
+    // Production UI: the fullLinkJS output and the static files are embedded in the jar under /ui.
     Compile / resourceGenerators += Def.task {
       val linked = (ui / Compile / fullLinkJSOutput).value
+      val static = (ui / baseDirectory).value / "src" / "main" / "static"
       val dest = (Compile / resourceManaged).value / "ui"
       IO.copyDirectory(linked, dest)
+      IO.copyDirectory(static, dest)
       (dest ** "*").get().filter(_.isFile)
     }.taskValue
   )

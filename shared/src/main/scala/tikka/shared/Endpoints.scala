@@ -71,8 +71,8 @@ object Endpoints:
   val meta: PublicEndpoint[Unit, Failure, MetaOut, Any] =
     api.get.in("meta").out(jsonBody[MetaOut])
 
-  val projects: PublicEndpoint[Unit, Failure, List[ProjectOut], Any] =
-    api.get.in("projects").out(jsonBody[List[ProjectOut]])
+  val projects: PublicEndpoint[Unit, Failure, List[ProjectSummaryOut], Any] =
+    api.get.in("projects").out(jsonBody[List[ProjectSummaryOut]])
 
   /** Creating a project is a human act: the CLI calls this, and MCP has no project tools at all. */
   val createProject: PublicEndpoint[ProjectIn, Failure, ProjectOut, Any] =
