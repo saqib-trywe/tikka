@@ -13,3 +13,6 @@ node_modules/
 
 # Scratch TIKKA_HOME directories used while testing by hand
 tmp/
+
+# The dev home tikka tracks its own work in while it is being built
+.tikka-dev/
