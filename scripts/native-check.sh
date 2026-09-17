@@ -27,22 +27,54 @@ printf 'project = "TIK"\n' >.tikka
 "$tikka" new "Ready work"
 cd - >/dev/null
 
-# Repeated runs first, each with a timeout, so an intermittent failure reports its exit status: 124 is a hang, and
-# 128 plus a signal number is a crash (139 for SIGSEGV, 134 for SIGABRT).
-limit=""
-if command -v timeout >/dev/null; then limit="timeout 20"; fi
-for run in $(seq 1 200); do
-  set +e
-  (cd "$repo" && $limit "$tikka" search ready >/dev/null 2>"$TIKKA_HOME/search.err")
-  status=$?
-  set -e
-  if [ "$status" -ne 0 ]; then
-    echo "run $run of tikka search failed with exit status $status"
-    cat "$TIKKA_HOME/search.err"
-    exit 1
-  fi
-done
-echo "200 runs of tikka search succeeded"
+# Repeated runs of three shapes, to tell where an intermittent hang lives: the runtime alone (--version), one request
+# (daemon status), and a command with its concurrent version check (search). A run still going after 10 seconds is
+# a hang; the first one gets a thread backtrace where gdb is available.
+probe() {
+  name="$1"
+  shift
+  failures=0
+  for run in $(seq 1 150); do
+    "$tikka" "$@" >/dev/null 2>&1 &
+    pid=$!
+    for _ in $(seq 1 100); do
+      kill -0 "$pid" 2>/dev/null || break
+      sleep 0.1
+    done
+    if kill -0 "$pid" 2>/dev/null; then
+      failures=$((failures + 1))
+      echo "$name: run $run hung"
+      # Ubuntu only lets a process's parent trace it, so the backtrace needs sudo there.
+      if [ "$failures" -eq 1 ] && command -v gdb >/dev/null && sudo -n true 2>/dev/null; then
+        sudo gdb -batch -p "$pid" -ex "thread apply all bt" 2>&1 | grep -E '^Thread|^#' | head -150
+      fi
+      kill -9 "$pid" 2>/dev/null || true
+      wait "$pid" 2>/dev/null || true
+    else
+      set +e
+      wait "$pid"
+      status=$?
+      set -e
+      if [ "$status" -ne 0 ]; then
+        failures=$((failures + 1))
+        echo "$name: run $run exited with status $status"
+      fi
+    fi
+  done
+  echo "$name: $failures failures in 150 runs"
+  total=$((total + failures))
+}
+
+total=0
+cd "$repo"
+probe version --version
+probe status daemon status
+probe search search ready
+cd - >/dev/null
+if [ "$total" -ne 0 ]; then
+  echo "tikka hung or failed $total times"
+  exit 1
+fi
 
 # The budget from "Choose the CLI approach": search against a running daemon, under 100 ms at the median.
 (cd "$repo" && "$OLDPWD/scripts/startup-gate.sh" 100 "$tikka" search ready)

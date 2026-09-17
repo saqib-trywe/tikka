@@ -87,7 +87,7 @@ jobs:
       # sttp's curl backend links libcurl and libidn2.
       - name: Install native libraries and hyperfine (Linux)
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y libcurl4-openssl-dev libidn2-dev hyperfine
+        run: sudo apt-get update && sudo apt-get install -y libcurl4-openssl-dev libidn2-dev hyperfine gdb
       - name: Install native libraries and hyperfine (macOS)
         if: runner.os == 'macOS'
         run: brew install libidn2 hyperfine
