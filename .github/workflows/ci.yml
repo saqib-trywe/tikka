@@ -46,7 +46,7 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           cache: sbt
       - uses: sbt/setup-sbt@v1
-      - run: sbt "sharedJVM/testFull; proseJVM/testFull; core/testFull; daemon/testFull; cliJVM/testFull; daemon/assembly"
+      - run: sbt "sharedJVM/testFull; proseJVM/testFull; core/testFull; daemon/testFull; cliJVM/testFull; integration/testFull; daemon/assembly"
       - name: Daemon jar embeds the UI and runs
         run: |
           unzip -l target/dist/tikka-daemon.jar | grep -q ' ui/main.js$'
@@ -70,6 +70,7 @@ jobs:
       - run: sbt "sharedJS/testFull; proseJS/testFull; ui/fullLinkJS"
 
   native:
+    needs: jvm
     strategy:
       fail-fast: false
       matrix:
@@ -90,9 +91,17 @@ jobs:
       - name: Install native libraries and hyperfine (macOS)
         if: runner.os == 'macOS'
         run: brew install libidn2 hyperfine
+      - uses: actions/download-artifact@v8
+        with:
+          name: tikka-daemon
+          path: target/dist
       - run: sbt "sharedNative/testFull; cliNative/testFull; cliRelease"
-      - name: Startup gate
-        run: scripts/startup-gate.sh 100 "$(find target/out -path '*native*' -type f -name tikka)" --version
+      # The startup gate on `tikka search` against a live daemon, and a request through `tikka mcp` over stdin.
+      - name: Native CLI against a real daemon
+        run: scripts/native-check.sh "$(find target/out -path '*native*' -type f -name tikka)" target/dist/tikka-daemon.jar
+      - name: Daemon log
+        if: failure()
+        run: cat target/native-check-home/daemon.log
 
   conformance:
     needs: jvm
