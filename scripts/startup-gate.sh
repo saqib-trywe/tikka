@@ -8,7 +8,10 @@ shift
 report="target/startup-gate.json"
 mkdir -p target
 
-hyperfine --warmup 5 --runs 100 --shell=none --export-json "$report" "$*"
+# GATE_IGNORE_FAILURES=1 keeps timing past a failed run (see TIK-4 in scripts/native-check.sh).
+ignore=()
+if [ "${GATE_IGNORE_FAILURES:-}" = "1" ]; then ignore=(--ignore-failure); fi
+hyperfine --warmup 5 --runs 100 --shell=none ${ignore[@]+"${ignore[@]}"} --export-json "$report" "$*"
 
 python3 - "$report" "$budget_ms" <<'PY'
 import json, sys
