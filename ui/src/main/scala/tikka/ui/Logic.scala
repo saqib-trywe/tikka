@@ -1,5 +1,7 @@
 package tikka.ui
 
+import com.raquo.airstream.core.EventStream
+import com.raquo.airstream.core.Signal
 import org.scalajs.dom
 import tikka.shared.Wire.EventOut
 import tikka.shared.Wire.RowOut
@@ -13,6 +15,16 @@ final case class Placement(target: String, before: Boolean)
 
 /** The view logic that has nothing to do with the DOM, so it can be tested on its own. */
 object Logic:
+  /** What a view has to fetch: what the page asks for as soon as anyone is listening, and again on every refresh.
+    *
+    * Derived from the page rather than pushed into an `EventBus` when the page arrives. A bus drops what it is given
+    * before its own subscriber starts, and that is exactly the order a view mounts in: the page signal fires its
+    * current value the instant it is subscribed, which can be before the binder that would have acted on it. A view
+    * wired that way sits on "loading…" forever.
+    */
+  def loads[A](page: Signal[A], refresh: EventStream[Any]): EventStream[A] =
+    page.flatMapSwitch(current => EventStream.fromValue(current).mergeWith(refresh.mapTo(current)))
+
   /** An event concerns an issue when it was written to it, or names it among the issues it also touched. */
   def concerns(event: EventOut, id: String): Boolean = event.issue == id || event.related.contains(id)
 

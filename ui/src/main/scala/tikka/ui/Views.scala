@@ -58,19 +58,17 @@ object Views:
     val typed = Var("")
     val results = Var(Option.empty[Either[String, SearchOut]])
     val pending = Var(0)
-    val reload = EventBus[String]()
+    val again = EventBus[Unit]()
+    val asked: Signal[String] = page.map(current => current.query.getOrElse(Logic.lastQuery()))
     div(
       cls := "search",
-      page --> Observer[Page.Search]: current =>
-        val query = current.query.getOrElse(Logic.lastQuery())
-        typed.set(query)
-        reload.emit(query)
-      ,
-      reload.events.flatMapSwitch(query => Client.search(query, None)) --> Observer[Either[String, SearchOut]]:
-        answer =>
-          results.set(Some(answer))
-          pending.set(0)
-          answer.foreach(found => Logic.rememberQuery(found.effectiveQuery))
+      asked --> Observer[String](query => typed.set(query)),
+      Logic.loads(asked, again.events).flatMapSwitch(query => Client.search(query, None)) --> Observer[
+        Either[String, SearchOut]
+      ]: answer =>
+        results.set(Some(answer))
+        pending.set(0)
+        answer.foreach(found => Logic.rememberQuery(found.effectiveQuery))
       ,
       // A list never reshuffles under the reader; it offers to refresh instead.
       Live.events --> Observer[EventOut](_ => pending.update(_ + 1)),
@@ -87,9 +85,7 @@ object Views:
       child <-- pending.signal.map: count =>
         Logic
           .updateBar(count)
-          .fold(div(cls := "empty"))(text =>
-            div(cls := "updates", button(text, onClick --> (_ => reload.emit(typed.now()))))
-          ),
+          .fold(div(cls := "empty"))(text => div(cls := "updates", button(text, onClick --> (_ => again.emit(()))))),
       child <-- results.signal.map:
         case None                => loading
         case Some(Left(message)) => failure(message)
@@ -103,7 +99,7 @@ object Views:
                   cls := "effective",
                   s"${found.effectiveQuery}: ${rows.size} of ${if found.hasMore then "more" else "all"}"
                 ),
-                rows.map(value => row(value, reorder(rows, value, () => reload.emit(typed.now()))))
+                rows.map(value => row(value, reorder(rows, value, () => again.emit(()))))
               )
     )
 
@@ -129,20 +125,23 @@ object Views:
 
   def issue(page: Signal[Page.Issue]): HtmlElement =
     val state = Var(Option.empty[Either[String, IssueOut]])
-    val reload = EventBus[String]()
+    val again = EventBus[Unit]()
+    // The detail view does refresh in place, because the reader is looking at exactly this issue.
+    val touched: EventStream[Unit] = Live.events
+      .withCurrentValueOf(page)
+      .collect:
+        case (event, current) if Logic.concerns(event, current.id) => ()
     div(
       cls := "issue",
-      page --> Observer[Page.Issue](current => reload.emit(current.id)),
-      reload.events.flatMapSwitch(Client.issue) --> Observer[Either[String, IssueOut]](answer =>
-        state.set(Some(answer))
-      ),
-      // The detail view does refresh in place, because the reader is looking at exactly this issue.
-      Live.events.withCurrentValueOf(page) --> Observer[(EventOut, Page.Issue)]: (event, current) =>
-        if Logic.concerns(event, current.id) then reload.emit(current.id),
+      // A different issue shows its own loading, rather than the one before it until the answer lands.
+      page --> Observer[Page.Issue](_ => state.set(None)),
+      Logic.loads(page.map(_.id), again.events.mergeWith(touched)).flatMapSwitch(Client.issue) --> Observer[
+        Either[String, IssueOut]
+      ](answer => state.set(Some(answer))),
       child <-- state.signal.map:
         case None                => loading
         case Some(Left(message)) => failure(message)
-        case Some(Right(found))  => details(found, () => reload.emit(found.id))
+        case Some(Right(found))  => details(found, () => again.emit(()))
     )
 
   private def details(found: IssueOut, refresh: () => Unit): HtmlElement =

@@ -1,7 +1,12 @@
 package tikka.ui
 
+import com.raquo.airstream.eventbus.EventBus
+import com.raquo.airstream.ownership.ManualOwner
+import com.raquo.airstream.state.Var
 import tikka.shared.Wire.EventOut
 import tikka.shared.Wire.RowOut
+
+import scala.collection.mutable
 
 /** The view logic that does not touch the DOM. */
 class LogicTest extends munit.FunSuite:
@@ -15,6 +20,33 @@ class LogicTest extends munit.FunSuite:
 
   private def event(issue: String, related: List[String] = Nil): EventOut =
     EventOut(1, "2026-09-17T10:00:00.000Z", "mcp:claude-code", issue, related, Nil, None)
+
+  /** What a view sees, subscribing after the page already has a value — the order a view really mounts in. */
+  private def loaded(page: Var[String], refresh: EventBus[Unit]): mutable.Buffer[String] =
+    val seen = mutable.Buffer.empty[String]
+    Logic.loads(page.signal, refresh.events).foreach(seen.append(_): Unit)(using ManualOwner()): Unit
+    seen
+
+  test("a view is told what to load when it subscribes, not when the page was set"):
+    val page = Var("TIK-1")
+    val seen = loaded(page, EventBus[Unit]())
+    assertEquals(seen.toList, List("TIK-1"))
+
+  test("a refresh asks for the page again"):
+    val page = Var("TIK-1")
+    val refresh = EventBus[Unit]()
+    val seen = loaded(page, refresh)
+    refresh.emit(())
+    refresh.emit(())
+    assertEquals(seen.toList, List("TIK-1", "TIK-1", "TIK-1"))
+
+  test("a new page is loaded, and a refresh then asks for that one"):
+    val page = Var("TIK-1")
+    val refresh = EventBus[Unit]()
+    val seen = loaded(page, refresh)
+    page.set("TIK-2")
+    refresh.emit(())
+    assertEquals(seen.toList, List("TIK-1", "TIK-2", "TIK-2"))
 
   test("an event concerns an issue when it is its subject or among the issues it touched"):
     assert(Logic.concerns(event("TIK-1"), "TIK-1"))
