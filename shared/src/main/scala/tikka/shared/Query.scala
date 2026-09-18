@@ -34,6 +34,17 @@ object AssigneeMatch:
       case Anyone      => "any"
       case Named(name) => name.render
 
+/** A parent, or `none` for issues at the top of their hierarchy. */
+enum ParentMatch:
+  case Nobody
+  case Of(id: IssueId)
+
+object ParentMatch:
+  extension (matcher: ParentMatch)
+    def render: String = matcher match
+      case Nobody => "none"
+      case Of(id) => id.render
+
 /** Open or closed, as a query asks for it. */
 enum StatusValue:
   case Open, Closed
@@ -127,7 +138,7 @@ enum Filter:
   case Resolution(values: List[tikka.shared.Resolution])
   case Assignee(values: List[AssigneeMatch])
   case Label(values: List[NameMatch])
-  case Parent(ids: List[IssueId])
+  case Parent(values: List[ParentMatch])
   case Under(ids: List[IssueId])
   case Blocks(ids: List[IssueId])
   case BlockedBy(ids: List[IssueId])
@@ -151,7 +162,7 @@ object Filter:
       case Resolution(values)               => s"resolution:${values.map(_.value).mkString(",")}"
       case Assignee(values)                 => s"assignee:${values.map(_.render).mkString(",")}"
       case Label(values)                    => s"label:${values.map(_.render).mkString(",")}"
-      case Parent(ids)                      => s"parent:${renderIds(ids)}"
+      case Parent(values)                   => s"parent:${values.map(_.render).mkString(",")}"
       case Under(ids)                       => s"under:${renderIds(ids)}"
       case Blocks(ids)                      => s"blocks:${renderIds(ids)}"
       case BlockedBy(ids)                   => s"blocked-by:${renderIds(ids)}"

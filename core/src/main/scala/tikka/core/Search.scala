@@ -47,7 +47,10 @@ private[core] object Search:
     case Filter.Resolution(values)               => Right(anyOf(values)(value => fr"issue.resolution = $value"))
     case Filter.Assignee(values)                 => Right(anyOf(values)(assignee))
     case Filter.Label(values)                    => Right(anyOf(values)(label))
-    case Filter.Parent(ids)      => Right(anyOf(ids)(id => fr"issue.parent_id = (" ++ rowId(id) ++ fr")"))
+    case Filter.Parent(values)                   =>
+      Right(anyOf(values):
+        case ParentMatch.Nobody => fr"issue.parent_id IS NULL"
+        case ParentMatch.Of(id) => fr"issue.parent_id = (" ++ rowId(id) ++ fr")")
     case Filter.Under(ids)       => Right(anyOf(ids)(under))
     case Filter.Blocks(ids)      => Right(anyOf(ids)(blocks))
     case Filter.BlockedBy(ids)   => Right(anyOf(ids)(blockedBy))

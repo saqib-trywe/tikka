@@ -19,14 +19,18 @@ import scala.concurrent.duration.*
 final case class Daemon(core: Core, server: Server)
 
 object Daemon:
-  def resource(home: Home, clock: Clock = Clock.system): Resource[IO, Daemon] =
+  def resource(
+      home: Home,
+      clock: Clock = Clock.system,
+      uiDirectory: Option[java.nio.file.Path] = sys.env.get("TIKKA_UI_DIR").map(java.nio.file.Path.of(_))
+  ): Resource[IO, Daemon] =
     val port = home.config.port.value
     for
       store <- Store.open(home.store)
       changes <- Resource.eval(Topic[IO, Unit])
       sessions <- Resource.eval(Mcp.Sessions.make)
       core = Core(store, clock, changes.publish1(()).void)
-      routes = Hardening(port)(Http.routes(core, changes) <+> Mcp.routes(core, sessions))
+      routes = Hardening(port)(Http.routes(core, changes) <+> Mcp.routes(core, sessions) <+> Ui.routes(uiDirectory))
       server <- EmberServerBuilder
         .default[IO]
         .withHost(ipv4"127.0.0.1")

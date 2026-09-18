@@ -1,5 +1,6 @@
 package tikka.shared
 
+import cats.data.Validated
 import io.circe.Codec
 import io.circe.Decoder
 import io.circe.Encoder
@@ -30,6 +31,12 @@ object Tri:
     override def tryDecode(cursor: io.circe.ACursor): Decoder.Result[Tri[A]] = cursor match
       case value: HCursor => apply(value)
       case _              => Right(Missing)
+
+    // Accumulating is a separate path with its own default, which fails on a missing field. It is the path tapir
+    // takes, so without this every request that leaves the field out is refused.
+    override def tryDecodeAccumulating(cursor: io.circe.ACursor): Decoder.AccumulatingResult[Tri[A]] = cursor match
+      case value: HCursor => decodeAccumulating(value)
+      case _              => Validated.validNel(Missing)
 
   /** On the wire a tri-state field is just an optional, nullable value. */
   given [A](using schema: Schema[A]): Schema[Tri[A]] = schema.asOption.as[Tri[A]]
@@ -112,6 +119,7 @@ object Wire:
       at: String,
       actor: String,
       issue: String,
+      related: List[String],
       changes: List[ChangeOut],
       comment: Option[String]
   ) derives ConfiguredCodec,
@@ -123,6 +131,7 @@ object Wire:
       event.at.value,
       event.actor.render,
       event.subject.render,
+      event.related.map(_.render),
       event.changes.map(ChangeOut.from),
       event.comment
     )
@@ -221,7 +230,11 @@ object Wire:
   object ProjectOut:
     def from(project: Project): ProjectOut = ProjectOut(project.key.value, project.name, project.created.value)
 
-  final case class MetaOut(version: String, protocols: List[String]) derives ConfiguredCodec, Schema
+  /** `latest_event` is where a live view starts following, so it never replays history it already has. */
+  final case class MetaOut(version: String, protocols: List[String], latestEvent: Long) derives ConfiguredCodec, Schema
+
+  /** A project as the project list shows it, with its open and ready counts. */
+  final case class ProjectSummaryOut(key: String, name: String, open: Int, ready: Int) derives ConfiguredCodec, Schema
 
   final case class FeedOut(events: List[EventOut], nextAfter: Long, hasMore: Boolean) derives ConfiguredCodec, Schema
 
@@ -263,8 +276,26 @@ object Wire:
       rankBefore: Option[String] = None,
       rankAfter: Option[String] = None,
       comment: Option[String] = None
-  ) derives ConfiguredCodec,
-        Schema
+  ) derives Schema
+
+  object UpdateIn:
+    private val fields: ConfiguredCodec[UpdateIn] = ConfiguredCodec.derived
+
+    /** A parent nobody touched leaves no trace on the wire.
+      *
+      * A tri-state field cannot drop itself: an encoder is handed the value, not the object it sits in. So the object
+      * is written and the untouched parent taken back out, because an encoder that wrote `null` would be asking every
+      * reader to clear the parent — orphaning the issue on any edit that never mentioned it.
+      */
+    given Codec.AsObject[UpdateIn] with
+      def encodeObject(value: UpdateIn): JsonObject =
+        val written = fields.encodeObject(value)
+        if value.parent == Tri.Missing then written.remove("parent") else written
+
+      def apply(cursor: HCursor): Decoder.Result[UpdateIn] = fields(cursor)
+
+      override def decodeAccumulating(cursor: HCursor): Decoder.AccumulatingResult[UpdateIn] =
+        fields.decodeAccumulating(cursor)
 
   final case class ClaimIn(assignee: String, comment: Option[String] = None) derives ConfiguredCodec, Schema
 

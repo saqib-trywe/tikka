@@ -67,7 +67,7 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           cache: sbt
       - uses: sbt/setup-sbt@v1
-      - run: sbt "sharedJS/testFull; proseJS/testFull; ui/fullLinkJS"
+      - run: sbt "sharedJS/testFull; proseJS/testFull; ui/testFull; ui/fullLinkJS"
 
   native:
     needs: jvm

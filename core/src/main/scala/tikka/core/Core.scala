@@ -26,6 +26,12 @@ final class Core(store: Store, clock: Clock, changed: IO[Unit] = IO.unit):
 
   def projects: IO[List[Project]] = store.reading(Queries.projects)
 
+  /** Projects with their open and ready counts, for the project list. */
+  def projectCounts: IO[List[(Project, Int, Int)]] = store.reading(Queries.projectCounts)
+
+  /** The sequence of the newest event, or 0 before the first. */
+  def latestEvent: IO[Long] = store.reading(Queries.latestEvent)
+
   /** Creating a project rescans existing prose for its key, so whether a token counts never depends on when the text
     * was written.
     */

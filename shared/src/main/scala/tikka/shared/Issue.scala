@@ -97,12 +97,15 @@ object ChangeOp:
 /** One field's movement within an event: `old` is absent when nothing was there, `updated` when it was cleared. */
 final case class Change(field: ChangeField, op: ChangeOp, old: Option[String], updated: Option[String])
 
-/** One write, however many fields it touched, plus the comment that explains it. */
+/** One write, however many fields it touched, plus the comment that explains it. `related` names the other issues whose
+  * timelines it also belongs on: edge counterparts, and issues it unblocked or blocked again.
+  */
 final case class Event(
     seq: EventSeq,
     at: Timestamp,
     actor: Actor,
     subject: IssueId,
+    related: List[IssueId],
     changes: List[Change],
     comment: Option[String]
 )

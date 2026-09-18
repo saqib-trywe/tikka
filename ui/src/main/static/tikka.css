@@ -1,0 +1,87 @@
+/* Plain hand-written CSS: a reading surface, not a form-heavy tool. */
+:root {
+  --ink: #1b1b1f;
+  --muted: #6b6b76;
+  --line: #dcdce3;
+  --page: #fbfbfd;
+  --accent: #2f5bd0;
+  --closed: #7a7a85;
+  --blocked: #a8501b;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--page);
+  color: var(--ink);
+  font: 15px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.app { max-width: 60rem; margin: 0 auto; padding: 0 1rem 4rem; }
+
+.bar { display: flex; gap: 1rem; align-items: baseline; padding: 1rem 0; border-bottom: 1px solid var(--line); }
+.bar .brand { font-weight: 600; font-size: 1.1rem; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+h2 { font-size: 1.25rem; margin: 1.5rem 0 0.25rem; }
+h3 { font-size: 1rem; margin: 1.5rem 0 0.5rem; color: var(--muted); }
+
+.query { display: flex; gap: 0.5rem; margin: 1rem 0; }
+.queryBox { flex: 1; padding: 0.5rem 0.65rem; border: 1px solid var(--line); border-radius: 6px; font: inherit; }
+button { font: inherit; padding: 0.35rem 0.7rem; border: 1px solid var(--line); border-radius: 6px; background: white; cursor: pointer; }
+button:disabled { opacity: 0.4; cursor: default; }
+
+.updates button { background: #fff6e5; border-color: #e8c27a; width: 100%; }
+
+.effective, .meta, .byline { color: var(--muted); font-size: 0.85rem; }
+
+.row { display: flex; gap: 0.6rem; align-items: baseline; padding: 0.4rem 0; border-bottom: 1px solid var(--line); }
+.row .id { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.row .title { flex: 1; color: var(--ink); }
+.row .state { color: var(--muted); font-size: 0.85rem; }
+.row.closed .title { color: var(--closed); text-decoration: line-through; }
+.row.blocked .state { color: var(--blocked); }
+
+.label, .labels .label { background: #ececf3; border-radius: 999px; padding: 0.05rem 0.5rem; font-size: 0.8rem; margin-left: 0.25rem; }
+.label .remove { border: none; background: none; padding: 0 0 0 0.25rem; cursor: pointer; color: var(--muted); }
+
+.edges { margin: 0.35rem 0; font-size: 0.9rem; }
+.edgeName { color: var(--muted); }
+.ref { margin-right: 0.6rem; }
+.ref.closed { color: var(--closed); text-decoration: line-through; }
+.blockerEntry { display: inline-block; margin-right: 0.75rem; }
+.nested { margin-left: 0.75rem; padding-left: 0.5rem; border-left: 2px solid var(--line); }
+.expand { padding: 0 0.35rem; margin-left: 0.25rem; }
+
+.prose { margin: 1rem 0; }
+.prose pre, .prose code { background: #f1f1f6; border-radius: 4px; padding: 0.1rem 0.3rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.prose pre { padding: 0.75rem; overflow-x: auto; }
+.mention { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.mention.closed { color: var(--closed); text-decoration: line-through; }
+.mention.missing { color: var(--muted); }
+
+.edits { display: grid; gap: 0.5rem; margin: 1.5rem 0; padding: 0.75rem; border: 1px solid var(--line); border-radius: 8px; background: white; }
+.edit { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+.edit textarea, .edit input { flex: 1; min-width: 12rem; padding: 0.4rem; border: 1px solid var(--line); border-radius: 6px; font: inherit; }
+
+.comment { margin: 0.75rem 0; }
+.comment p { margin: 0.15rem 0; }
+
+.event { padding: 0.5rem 0; border-bottom: 1px solid var(--line); }
+.change { font-size: 0.9rem; }
+.diff { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85rem; white-space: pre-wrap; }
+.diff .added { color: #1b6b3a; }
+.diff .removed { color: #97211f; }
+.diff .same { color: var(--muted); }
+
+.treeRow { padding-left: 1rem; }
+.branch { margin-left: 0.5rem; border-left: 1px solid var(--line); }
+
+.project { display: flex; gap: 1rem; align-items: baseline; padding: 0.5rem 0; border-bottom: 1px solid var(--line); }
+.project .id { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.project .name { flex: 1; }
+
+.failure { color: #97211f; }
+.loading, .empty:empty { color: var(--muted); }

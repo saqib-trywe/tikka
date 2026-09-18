@@ -82,6 +82,16 @@ class SearchTest extends TempHome, Builders:
         assertEquals(children, List(middle))
         assertEquals(descendants.toSet, Set(middle, bottom), "under reaches any depth, and excludes the root")
 
+  home.test("parent:none finds the top of each hierarchy"): directory =>
+    withCore(directory): core =>
+      for
+        project <- core.project("TIK")
+        top <- core.addTo(project, "Top")
+        _ <- core.add(creating("Child", project = Some(project), parent = Some(top)))
+        loose <- core.addTo(project, "Standalone")
+        roots <- core.find("parent:none")
+      yield assertEquals(roots, List(top, loose))
+
   home.test("blocking filters read both directions, and ready is open, unblocked and unclaimed"): directory =>
     withCore(directory): core =>
       for

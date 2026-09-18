@@ -102,7 +102,7 @@ object QueryParser:
         case "resolution"                       => each(value, token, Resolution.parse).map(Filter.Resolution.apply)
         case "assignee"                         => each(value, token, assignee).map(Filter.Assignee.apply)
         case "label"                            => each(value, token, label).map(Filter.Label.apply)
-        case "parent"                           => ids(value, token).map(Filter.Parent.apply)
+        case "parent"                           => each(value, token, parent).map(Filter.Parent.apply)
         case "under"                            => ids(value, token).map(Filter.Under.apply)
         case "blocks"                           => ids(value, token).map(Filter.Blocks.apply)
         case "blocked-by"                       => ids(value, token).map(Filter.BlockedBy.apply)
@@ -119,6 +119,10 @@ object QueryParser:
     case "open"   => Right(StatusValue.Open)
     case "closed" => Right(StatusValue.Closed)
     case other    => Left(s"'$other' is not a status: expected open or closed")
+
+  private def parent(value: String): Either[String, ParentMatch] = value match
+    case "none" => Right(ParentMatch.Nobody)
+    case other  => IssueId.parse(other).map(ParentMatch.Of.apply)
 
   private def assignee(value: String): Either[String, AssigneeMatch] = value match
     case "none" => Right(AssigneeMatch.Nobody)
