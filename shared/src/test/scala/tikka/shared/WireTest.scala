@@ -44,6 +44,28 @@ class WireTest extends munit.FunSuite:
     assertEquals(decode[UpdateIn]("""{"parent": null}""").map(_.parent), Right(Tri.Cleared))
     assertEquals(decode[UpdateIn]("""{"parent": "TIK-1"}""").map(_.parent), Right(Tri.Set("TIK-1")))
 
+  // tapir decodes accumulating, which is a different path through the codec than `decode` takes, and it is the one
+  // every HTTP and MCP request actually goes through.
+  test("an absent parent stays absent when the errors are accumulated, as the server decodes them"):
+    val accumulated = io.circe.parser
+      .parse("""{"comment": "just a comment"}""")
+      .flatMap(json => io.circe.Decoder[UpdateIn].decodeAccumulating(json.hcursor).toEither.left.map(_.head))
+    assertEquals(accumulated.map(_.parent), Right(Tri.Missing))
+
+  // An untouched parent that reaches the wire as null would read back as "clear it", so an edit that never mentioned
+  // the parent would orphan the issue.
+  test("an untouched parent is not on the wire at all"):
+    assert(!UpdateIn(comment = Some("just a comment")).asJson.hcursor.downField("parent").succeeded)
+    assert(UpdateIn(parent = Tri.Cleared).asJson.hcursor.downField("parent").succeeded)
+    assertEquals(UpdateIn(parent = Tri.Set("TIK-1")).asJson.hcursor.get[String]("parent"), Right("TIK-1"))
+
+  test("the three parent states survive a round trip"):
+    def roundTrip(update: UpdateIn): Either[String, Tri[String]] =
+      decode[UpdateIn](update.asJson.noSpaces).left.map(_.toString).map(_.parent)
+    assertEquals(roundTrip(UpdateIn(comment = Some("x"))), Right(Tri.Missing))
+    assertEquals(roundTrip(UpdateIn(parent = Tri.Cleared)), Right(Tri.Cleared))
+    assertEquals(roundTrip(UpdateIn(parent = Tri.Set("TIK-1"))), Right(Tri.Set("TIK-1")))
+
   test("an update maps to the core's command, clearing the parent on null"):
     val update = decode[UpdateIn]("""{"parent": null, "labels_add": ["Bug"], "expected_version": 3}""").left
       .map(_.toString)

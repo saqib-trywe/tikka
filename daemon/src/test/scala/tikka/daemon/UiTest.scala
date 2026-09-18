@@ -1,7 +1,10 @@
 package tikka.daemon
 
 import cats.effect.IO
+import org.http4s.CacheDirective
 import org.http4s.Method
+import org.http4s.headers.`Cache-Control`
+import org.http4s.headers.`Last-Modified`
 
 import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.Files
@@ -30,6 +33,17 @@ class UiTest extends RunningDaemon:
         assertEquals(styles._1, 200)
         assertEquals(missing._1, 404)
         assertNotEquals(escape._1, 200)
+
+  // The names carry no content hash, so a browser left to guess how long to keep main.js will go on running an old
+  // app against an upgraded daemon.
+  home.test("the app and its assets are always revalidated"): value =>
+    live(value): running =>
+      for
+        script <- running.headersOf(Method.GET, "/assets/main.js")
+        shell <- running.headersOf(Method.GET, "/i/TIK-42")
+      yield List(script, shell).foreach: headers =>
+        assertEquals(headers.get[`Cache-Control`].map(_.values.head), Some(CacheDirective.`no-cache`()))
+        assert(headers.get[`Last-Modified`].isDefined, "nothing to revalidate against")
 
   home.test("the API keeps its own not-found answers"): value =>
     live(value): running =>

@@ -10,6 +10,8 @@ import org.http4s.Response
 import org.http4s.StaticFile
 import org.http4s.Status
 import org.http4s.dsl.io.*
+import org.http4s.headers.`Cache-Control`
+import org.http4s.CacheDirective
 
 /** The web UI: its assets, and `index.html` for every other page, so a link like `/i/TIK-42` opens the app there.
   *
@@ -42,4 +44,14 @@ object Ui:
           .liftF(Files[IO].exists(candidate))
           .flatMap: present =>
             if present then StaticFile.fromPath(candidate, Some(request)) else OptionT.none
-    fromDisk.orElse(StaticFile.fromResource(s"ui/$name", Some(request)))
+    fromDisk.orElse(StaticFile.fromResource(s"ui/$name", Some(request))).map(alwaysAsk)
+
+  /** Ask every time.
+    *
+    * The assets do not carry a content hash in their names, so `main.js` built today has the name it had yesterday.
+    * Without this a browser is free to guess how long it may keep one — the guess is a fraction of the file's age, so
+    * an upgraded daemon can go on serving yesterday's app for an hour. `Last-Modified` still answers the question
+    * cheaply: a browser that asks gets 304 and its own copy back.
+    */
+  private def alwaysAsk(response: Response[IO]): Response[IO] =
+    response.putHeaders(`Cache-Control`(CacheDirective.`no-cache`()))
