@@ -18,4 +18,6 @@ object Main extends IOApp:
       console = Console[IO],
       input = fs2.io.stdin[IO](4096).through(text.utf8.decode).through(text.lines)
     )
-    Cli.run(arguments, environment, Processes.system, HttpBackend.resource, line => IO.println(line))
+    Cli
+      .run(arguments, environment, Processes.system, HttpBackend.resource, line => IO.println(line))
+      .flatMap(Exit.finish)
