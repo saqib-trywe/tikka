@@ -90,6 +90,13 @@ private[core] object Queries:
   def issueByKey(key: Long): ConnectionIO[Option[IssueRecord]] =
     (fr"SELECT" ++ issueColumns ++ fr"FROM issue WHERE id = $key").query[IssueRecord].option
 
+  /** Row keys to issue ids, for naming a page's parents without a query each. */
+  def idsAmong(keys: NonEmptyList[Long]): ConnectionIO[Map[Long, IssueId]] =
+    (fr"SELECT id, project_key, number FROM issue WHERE" ++ Fragments.in(fr"id", keys))
+      .query[(Long, ProjectKey, IssueNumber)]
+      .to[List]
+      .map(_.map((key, project, number) => key -> IssueId(project, number)).toMap)
+
   def insertIssue(
       id: IssueId,
       title: Title,
@@ -139,6 +146,14 @@ private[core] object Queries:
   def labels(key: Long): ConnectionIO[List[Label]] =
     sql"SELECT label FROM issue_label WHERE issue_id = $key ORDER BY label".query[Label].to[List]
 
+  /** The labels of a whole page of issues, keyed by issue. */
+  def labelsAmong(keys: NonEmptyList[Long]): ConnectionIO[Map[Long, List[Label]]] =
+    (fr"SELECT issue_id, label FROM issue_label WHERE" ++ Fragments.in(fr"issue_id", keys) ++
+      fr"ORDER BY issue_id, label")
+      .query[(Long, Label)]
+      .to[List]
+      .map(_.groupMap(_._1)(_._2))
+
   def addLabel(key: Long, label: Label): ConnectionIO[Int] =
     sql"INSERT OR IGNORE INTO issue_label (issue_id, label) VALUES ($key, $label)".update.run
 
@@ -146,9 +161,6 @@ private[core] object Queries:
     sql"DELETE FROM issue_label WHERE issue_id = $key AND label = $label".update.run
 
   // Edges
-
-  def parentOf(key: Long): ConnectionIO[Option[IssueRef]] =
-    refs(fr"i.id = (SELECT parent_id FROM issue WHERE id = $key)").map(_.headOption)
 
   def children(key: Long): ConnectionIO[List[IssueRef]] =
     refs(fr"i.parent_id = $key")
@@ -184,17 +196,20 @@ private[core] object Queries:
       .query[Boolean]
       .unique
 
+  /** Which of a page of issues something open is still blocking. */
+  def blockedAmong(keys: NonEmptyList[Long]): ConnectionIO[Set[Long]] =
+    (fr"""SELECT DISTINCT b.blocked_id FROM block_edge b JOIN issue i ON i.id = b.blocker_id
+          WHERE i.status = 'open' AND""" ++ Fragments.in(fr"b.blocked_id", keys))
+      .query[Long]
+      .to[List]
+      .map(_.toSet)
+
   private def refs(where: Fragment): ConnectionIO[List[IssueRef]] =
     (fr"SELECT i.project_key, i.number, i.title, i.resolution, i.closed_at FROM issue i WHERE" ++ where ++
       fr"ORDER BY i.project_key, i.number")
       .query[(ProjectKey, IssueNumber, Title, Option[Resolution], Option[Timestamp])]
       .map(toRef)
       .to[List]
-
-  def refsFor(keys: List[Long]): ConnectionIO[List[IssueRef]] =
-    NonEmptyList.fromList(keys) match
-      case None       => List.empty[IssueRef].pure[ConnectionIO]
-      case Some(some) => refs(Fragments.in(fr"i.id", some))
 
   private def toRef(
       row: (ProjectKey, IssueNumber, Title, Option[Resolution], Option[Timestamp])
@@ -256,15 +271,10 @@ private[core] object Queries:
   def rankAbove(project: ProjectKey, rank: Rank): ConnectionIO[Option[Rank]] =
     sql"SELECT MIN(rank) FROM issue WHERE project_key = $project AND rank > $rank".query[Option[Rank]].unique
 
-  // Listing, until the query grammar arrives
+  // Whole-project listing, for the export
 
   def issuesIn(project: ProjectKey): ConnectionIO[List[IssueRecord]] =
     (fr"SELECT" ++ issueColumns ++ fr"FROM issue WHERE project_key = $project ORDER BY rank, number")
-      .query[IssueRecord]
-      .to[List]
-
-  def childrenOf(parent: Long): ConnectionIO[List[IssueRecord]] =
-    (fr"SELECT" ++ issueColumns ++ fr"FROM issue WHERE parent_id = $parent ORDER BY rank, number")
       .query[IssueRecord]
       .to[List]
 

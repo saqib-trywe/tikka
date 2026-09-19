@@ -1,6 +1,7 @@
 package tikka.core
 
 import cats.data.EitherT
+import cats.data.NonEmptyList
 import cats.effect.IO
 import cats.syntax.all.*
 import doobie.*
@@ -132,7 +133,7 @@ final class Core(store: Store, clock: Clock, changed: IO[Unit] = IO.unit):
     for
       records <- statement.query[IssueRecord].to[List]
       visible = records.take(limit)
-      rows <- visible.traverse(rowOf)
+      rows <- rowsOf(visible)
     yield
       val more = records.size > limit
       val next = visible
@@ -675,23 +676,37 @@ final class Core(store: Store, clock: Clock, changed: IO[Unit] = IO.unit):
       .map(_.map(_.text).mkString("\n"))
       .flatMap(comments => Queries.indexIssue(key, title, body, comments))
 
-  private def rowOf(record: IssueRecord): ConnectionIO[Row] =
-    for
-      labels <- Queries.labels(record.key)
-      parent <- record.parentKey.flatTraverse(Queries.issueByKey)
-      blocked <- Queries.isBlocked(record.key)
-      updated <- Events.updatedAt(record.key, record.created)
-    yield Row(
-      record.id,
-      record.title,
-      record.state,
-      record.assignee,
-      labels,
-      parent.map(_.id),
-      blocked,
-      record.rank,
-      updated
-    )
+  /** A page of rows, in a fixed number of queries rather than one set per row. A row needs four things the `issue`
+    * table does not hold — its labels, its parent's id, whether anything open blocks it, and when it was last touched —
+    * and asking for each of them a row at a time makes a 200-issue page cost eight hundred statements.
+    */
+  private def rowsOf(records: List[IssueRecord]): ConnectionIO[List[Row]] =
+    NonEmptyList.fromList(records.map(_.key)) match
+      case None       => List.empty[Row].pure[ConnectionIO]
+      case Some(keys) =>
+        for
+          labels <- Queries.labelsAmong(keys)
+          parents <- NonEmptyList
+            .fromList(records.flatMap(_.parentKey).distinct)
+            .fold(Map.empty[Long, IssueId].pure[ConnectionIO])(Queries.idsAmong)
+          blocked <- Queries.blockedAmong(keys)
+          updated <- Events.updatedAtAmong(keys)
+        yield records.map: record =>
+          Row(
+            record.id,
+            record.title,
+            record.state,
+            record.assignee,
+            labels.getOrElse(record.key, Nil),
+            record.parentKey.flatMap(parents.get),
+            blocked.contains(record.key),
+            record.rank,
+            // No event yet means nothing has touched it since it was created.
+            updated.getOrElse(record.key, record.created)
+          )
+
+  /** `rowsOf` answers one row per record, so one record answers exactly one row. */
+  private def rowOf(record: IssueRecord): ConnectionIO[Row] = rowsOf(List(record)).map(_.head)
 
   private def rowByKey(key: Long): ConnectionIO[Row] =
     Queries

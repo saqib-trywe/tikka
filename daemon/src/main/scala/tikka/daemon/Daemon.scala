@@ -4,7 +4,7 @@ import cats.effect.IO
 import cats.effect.Resource
 import cats.syntax.all.*
 import com.comcast.ip4s.*
-import fs2.concurrent.Topic
+import fs2.concurrent.SignallingRef
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.Server
 import tikka.core.Clock
@@ -27,9 +27,9 @@ object Daemon:
     val port = home.config.port.value
     for
       store <- Store.open(home.store)
-      changes <- Resource.eval(Topic[IO, Unit])
+      changes <- Resource.eval(SignallingRef[IO, Long](0L))
       sessions <- Resource.eval(Mcp.Sessions.make)
-      core = Core(store, clock, changes.publish1(()).void)
+      core = Core(store, clock, changes.update(_ + 1))
       routes = Hardening(port)(Http.routes(core, changes) <+> Mcp.routes(core, sessions) <+> Ui.routes(uiDirectory))
       server <- EmberServerBuilder
         .default[IO]
