@@ -103,15 +103,10 @@ jobs:
         if: failure()
         run: cat target/native-check-home/daemon.log
 
-  # TIK-4: the Linux-only hang and abort. Immix is what we ship; Boehm is the control, because the suspicion is that
-  # Scala Native's multithreaded GC collects while a thread sits inside curl's blocking extern. If Boehm comes back
-  # clean and Immix does not, the GC is the cause rather than the daemon or the network.
+  # TIK-4 was a race between OpenSSL's atexit handler and a thread still running its TLS destructors: roughly one run
+  # in two hundred, so only repetition finds it. One pass of the check would have called the CLI healthy for months.
   native-stress:
     needs: jvm
-    strategy:
-      fail-fast: false
-      matrix:
-        gc: [immix, boehm]
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
@@ -121,14 +116,13 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           cache: sbt
       - uses: sbt/setup-sbt@v1
-      - run: sudo apt-get update && sudo apt-get install -y libcurl4-openssl-dev libidn2-dev libgc-dev gdb
+      - run: sudo apt-get update && sudo apt-get install -y libcurl4-openssl-dev libidn2-dev gdb
       - uses: actions/download-artifact@v8
         with:
           name: tikka-daemon
           path: target/dist
-      - name: Link the CLI with the ${{ matrix.gc }} collector
-        run: |
-          sbt "set cli.native / nativeConfig ~= (_.withMode(scala.scalanative.build.Mode.releaseFast).withGC(scala.scalanative.build.GC.${{ matrix.gc }})); cliNative / nativeLink"
+      - name: Link the CLI as it ships
+        run: sbt cliRelease
       - name: Stress the CLI against a real daemon
         run: scripts/native-stress.sh "$(find target/out -path '*native*' -type f -name tikka)" target/dist/tikka-daemon.jar 200
       - name: Daemon log
