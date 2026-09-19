@@ -5,7 +5,7 @@ import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 // fresh server per job, so reading `CI` there is safe.
 
 ThisBuild / scalaVersion := "3.9.0"
-ThisBuild / version := "0.2.0-SNAPSHOT"
+ThisBuild / version := "0.2.0"
 ThisBuild / scalacOptions ++= Seq(
   "-deprecation",
   "-feature",

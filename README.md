@@ -13,7 +13,7 @@ tikka claim TIK-42 --as saqib           # take it
 tikka close TIK-42 done -m "shipped"    # finish it
 ```
 
-Status: **0.1.0**, macOS and Linux. One daemon, four surfaces over one core — CLI, web UI, HTTP API, MCP.
+Status: **0.2.0**, macOS and Linux. One daemon, four surfaces over one core — CLI, web UI, HTTP API, MCP.
 
 ## Install
 
