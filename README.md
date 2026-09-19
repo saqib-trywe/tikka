@@ -121,6 +121,11 @@ back. Nothing is locked inside the database format.
   spec; [docs/build-plan.md](docs/build-plan.md) only orders the build.
 - [CLAUDE.md](CLAUDE.md) — conventions, for agents and people alike.
 
+## Licence
+
+[Apache-2.0](LICENSE). The macOS build ships libidn2, libunistring and libintl, which are LGPL; their terms travel
+in the archive beside them.
+
 ## Building
 
 ```sh
