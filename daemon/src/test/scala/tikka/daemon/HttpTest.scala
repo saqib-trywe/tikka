@@ -1,6 +1,8 @@
 package tikka.daemon
 
 import cats.effect.IO
+import cats.syntax.all.*
+import fs2.concurrent.SignallingRef
 import fs2.text
 import io.circe.Json
 import io.circe.parser.parse
@@ -14,6 +16,10 @@ import org.typelevel.ci.CIString
 import sttp.client4.httpclient.cats.HttpClientCatsBackend
 import sttp.model.Uri as SttpUri
 import sttp.tapir.client.sttp4.SttpClientInterpreter
+import tikka.core.Clock
+import tikka.core.Core
+import tikka.core.Migrations
+import tikka.core.Store
 import tikka.shared.*
 import tikka.shared.Wire.*
 
@@ -144,6 +150,30 @@ class HttpTest extends RunningDaemon:
         assertEquals(first._2.hcursor.get[Boolean]("has_more"), Right(true))
         assertEquals(rest._2.hcursor.downField("events").as[List[Json]].map(_.size), Right(1))
         assertEquals(meta._2.hcursor.get[List[String]]("protocols"), Right(List("2026-07-28", "2025-11-25")))
+
+  /** A subscriber queue backpressures whoever publishes to it, so wiring the post-commit hook to one made a writer wait
+    * on its slowest reader: with a stalled stream, the seventeenth write never came back. The signal behind the stream
+    * conflates instead, and a write is done when the store says so.
+    */
+  home.test("a live stream nobody is draining never holds up a write"): value =>
+    Migrations.run(value.store, Some(value.backups)) *>
+      Store
+        .open(value.store)
+        .use: store =>
+          for
+            changes <- SignallingRef[IO, Long](0L)
+            core = Core(store, Clock.system, changes.update(_ + 1))
+            key <- IO.fromEither(ProjectKey.parse("TIK").left.map(IllegalArgumentException(_)))
+            _ <- core.createProject(key, "Tikka")
+            // A reader that takes the stream and then stops reading it, like a tab whose socket has stalled.
+            stalled <- Http.live(core, changes, 0L).evalMap(_ => IO.never).compile.drain.start
+            written <- (1 to 40).toList
+              .traverse(n =>
+                core.create(CreateIssue(Some(key), title(s"Issue $n"), None, Nil, None, Nil, None, None), None, actor)
+              )
+              .timeout(30.seconds)
+            _ <- stalled.cancel
+          yield assertEquals(written.count(_.isRight), 40)
 
   home.test("the live stream replays from a resume point, then delivers new events as they are written"): value =>
     live(value): running =>

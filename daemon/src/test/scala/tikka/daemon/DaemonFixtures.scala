@@ -15,6 +15,8 @@ import java.nio.file.Path
 trait DaemonFixtures extends CatsEffectSuite:
   val actor: Actor = Actor(Surface.Daemon, None)
 
+  def title(value: String): Title = Title.parse(value).fold(sys.error, identity)
+
   val home: FunFixture[Home] = FunFixture[Home](
     setup = test =>
       val root = Path.of("target", "test-homes").toAbsolutePath
