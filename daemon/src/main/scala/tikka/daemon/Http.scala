@@ -5,7 +5,7 @@ import cats.effect.IO
 import cats.effect.Ref
 import cats.syntax.all.*
 import fs2.Stream
-import fs2.concurrent.Topic
+import fs2.concurrent.Signal
 import io.circe.JsonObject
 import io.circe.syntax.*
 import org.http4s.HttpRoutes
@@ -46,7 +46,7 @@ object Http:
       )
       .options
 
-  def routes(core: Core, changes: Topic[IO, Unit]): HttpRoutes[IO] =
+  def routes(core: Core, changes: Signal[IO, Long]): HttpRoutes[IO] =
     stream(core, changes) <+> Http4sServerInterpreter[IO](options).toRoutes(endpoints(core))
 
   /** A browser always sends `Origin` on a write, so a write carrying one came from the web UI. */
@@ -204,20 +204,22 @@ object Http:
   /** Server-sent events: stored events after the resume point first, then each new one as it is written. Each message's
     * `id:` is the event sequence, so a reconnecting `EventSource` resumes exactly where it left off.
     */
-  private def stream(core: Core, changes: Topic[IO, Unit]): HttpRoutes[IO] = HttpRoutes.of[IO]:
+  private def stream(core: Core, changes: Signal[IO, Long]): HttpRoutes[IO] = HttpRoutes.of[IO]:
     case request @ GET -> Root / "api" / "events" / "stream" :? After(after) =>
       val resumed = request.headers.get[`Last-Event-Id`].flatMap(_.id.value.toLongOption)
       Ok(live(core, changes, resumed.orElse(after).getOrElse(0L)))
 
-  def live(core: Core, changes: Topic[IO, Unit], from: Long): Stream[IO, ServerSentEvent] =
-    // Subscribing before the first read means a write landing between the two still wakes the loop.
+  /** A signal rather than a topic, because a writer must never wait on a reader. A subscriber queue backpressures
+    * whoever publishes to it, so a browser tab that has stopped draining its socket would eventually hold up the write
+    * that woke it. Conflating is safe here: `drain` re-reads from the store by sequence, so the only thing a missed
+    * wake-up costs is being folded into the next one, and `discrete` always ends on the latest value.
+    */
+  def live(core: Core, changes: Signal[IO, Long], from: Long): Stream[IO, ServerSentEvent] =
+    // `discrete` opens with the signal's current value, so the first read happens without waiting for a write.
     val events = Stream
-      .resource(changes.subscribeAwait(16))
-      .flatMap: wakes =>
-        Stream
-          .eval(Ref.of[IO, Long](from))
-          .flatMap: last =>
-            (Stream.emit(()) ++ wakes).evalMap(_ => drain(core, last)).flatMap(Stream.emits)
+      .eval(Ref.of[IO, Long](from))
+      .flatMap: last =>
+        changes.discrete.evalMap(_ => drain(core, last)).flatMap(Stream.emits)
       .map: event =>
         ServerSentEvent(
           data = Some(EventOut.from(event).asJson.noSpaces),
