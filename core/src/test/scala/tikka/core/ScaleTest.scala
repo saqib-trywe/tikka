@@ -12,9 +12,9 @@ import scala.concurrent.duration.*
   * benchmark. Both cases below were regressions found by review rather than by a test, which is why they are here.
   */
 class ScaleTest extends TempHome, Builders:
-  /** Each diamond doubles the number of distinct paths through the blocking graph while adding three issues, so 28
-    * of them is 85 issues and about 270 million paths. Measured against sqlite3, enumerating paths runs at roughly
-    * half a million a second, which puts this graph at several minutes; visiting each issue once is instant.
+  /** Each diamond doubles the number of distinct paths through the blocking graph while adding three issues, so 28 of
+    * them is 85 issues and about 270 million paths. Measured against sqlite3, enumerating paths runs at roughly half a
+    * million a second, which puts this graph at several minutes; visiting each issue once is instant.
     */
   private val diamonds = 28
 

@@ -13,10 +13,10 @@ import scala.annotation.tailrec
   * close a loop. The reachable path comes back with the answer, so a rejection can name it.
   *
   * Reachability and the path are two steps on purpose. Blocking is many-to-many, so a graph with diamonds in it holds
-  * exponentially many distinct paths, and a single recursive query carrying its path along with it enumerates every
-  * one of them before it can answer "no cycle" — which is the common case, on the write path, inside the write
-  * transaction. Deduplicating on the issue instead visits each one once; the path is only walked out when there is a
-  * cycle to name. Deduplicating also means a store hand-edited into a cycle answers rather than looping forever.
+  * exponentially many distinct paths, and a single recursive query carrying its path along with it enumerates every one
+  * of them before it can answer "no cycle" — which is the common case, on the write path, inside the write transaction.
+  * Deduplicating on the issue instead visits each one once; the path is only walked out when there is a cycle to name.
+  * Deduplicating also means a store hand-edited into a cycle answers rather than looping forever.
   */
 private[core] object Graph:
   /** `root` and everything under it, as a path of row keys, when `candidate` is among them. */
@@ -54,9 +54,12 @@ private[core] object Graph:
       reaches: Fragment,
       step: NonEmptyList[Long] => ConnectionIO[List[(Long, Long)]]
   ): ConnectionIO[Option[List[Long]]] =
-    reaches.query[Int].option.flatMap:
-      case None    => Option.empty[List[Long]].pure[ConnectionIO]
-      case Some(_) => walk(root, candidate, step)
+    reaches
+      .query[Int]
+      .option
+      .flatMap:
+        case None    => Option.empty[List[Long]].pure[ConnectionIO]
+        case Some(_) => walk(root, candidate, step)
 
   /** Breadth-first from `root`, remembering how each issue was first reached, so the path reads back off that trail.
     * One query per level, and each issue is left in the trail once.

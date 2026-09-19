@@ -105,8 +105,8 @@ private[core] object Events:
   /** An event as the `event` table holds it, before its changes and related issues are hung off it. */
   private type Row = (EventSeq, Timestamp, Actor, ProjectKey, IssueNumber, Option[String])
 
-  /** Fills in every row's changes and related issues in two queries, rather than two per row: a page of the feed is
-    * 200 events, and the live stream walks it on every write.
+  /** Fills in every row's changes and related issues in two queries, rather than two per row: a page of the feed is 200
+    * events, and the live stream walks it on every write.
     */
   private def hydrate(rows: List[Row]): ConnectionIO[List[Event]] =
     NonEmptyList.fromList(rows.map(_._1)) match

@@ -5,6 +5,14 @@ enum Surface:
   case Mcp, Cli, Web, Daemon
 
 object Surface:
+  /** The header an HTTP client states its surface in. A statement, not a proof — tikka is single-user and local, so
+    * there is nothing here to defend against; the point is that the event log records what the client said rather than
+    * what the daemon guessed from the shape of the request.
+    */
+  val header: String = "Tikka-Surface"
+
+  def parse(value: String): Option[Surface] = Surface.values.find(_.value == value)
+
   extension (surface: Surface)
     def value: String = surface match
       case Mcp    => "mcp"

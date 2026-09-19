@@ -98,6 +98,13 @@ class HttpTest extends RunningDaemon:
           Some(Json.obj("assignee" -> "someone".asJson)),
           origin
         )
+        // A client that names its surface is taken at its word, whatever the shape of its request suggests.
+        _ <- running.send(
+          Method.POST,
+          "/api/issues/TIK-1/release",
+          Some(Json.obj("assignee" -> "someone".asJson)),
+          origin ++ List(Surface.header -> Surface.Cli.value)
+        )
         history <- running.send(Method.GET, "/api/issues/TIK-1/events")
       yield
         val actors = history._2.hcursor
@@ -105,7 +112,7 @@ class HttpTest extends RunningDaemon:
           .as[List[Json]]
           .getOrElse(Nil)
           .flatMap(_.hcursor.get[String]("actor").toOption)
-        assertEquals(actors, List("cli", "web"))
+        assertEquals(actors, List("cli", "web", "cli"))
 
   home.test("a foreign origin or a rebinding host is refused on every route"): value =>
     live(value): running =>

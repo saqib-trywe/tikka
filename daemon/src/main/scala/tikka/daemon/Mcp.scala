@@ -296,7 +296,7 @@ object Mcp:
       input: Schema[In],
       output: Schema[Out],
       render: Out => String
-  )(handle: (Core, IssueId, In, Actor) => EitherT[IO, DomainError, Out]): Tool =
+  )(handle: (Core, String, In, Actor) => EitherT[IO, DomainError, Out]): Tool =
     tool(name, description, withId(input), output, render): (core, decoded, arguments, actor, _) =>
       for
         text <- EitherT.fromEither[IO](
@@ -305,8 +305,7 @@ object Mcp:
             .left
             .map(_ => DomainError.InvalidArgument("id", "an issue id is required"))
         )
-        id <- EitherT.fromEither[IO](Requests.issueId(text))
-        output <- handle(core, id, decoded, actor)
+        output <- handle(core, text, decoded, actor)
       yield output
 
   /** Every result carries text for the model and `structuredContent` against the declared schema. Nulls are dropped,
@@ -328,9 +327,7 @@ object Mcp:
       "isError" -> true.asJson
     )
 
-  private def lift[A](value: Either[DomainError, A]): EitherT[IO, DomainError, A] = EitherT.fromEither(value)
-
-  private def call[A](program: IO[Either[DomainError, A]]): EitherT[IO, DomainError, A] = EitherT(program)
+  private def lift[A](value: Either[DomainError, A]): EitherT[IO, DomainError, A] = Operations.lift(value)
 
   val tools: List[Tool] = List(
     tool(
@@ -345,8 +342,7 @@ object Mcp:
       summon[Schema[SearchOut]],
       Render.search
     ): (core, in, _, _, project) =>
-      call(core.search(in.query.getOrElse(""), project, in.cursor, in.limit.getOrElse(Core.defaultLimit)))
-        .map(SearchOut.from),
+      Operations.search(core, in.query.getOrElse(""), project, in.cursor, in.limit.getOrElse(Core.defaultLimit)),
     tool(
       "get_issue",
       "Fetch one issue: its fields, body, version, edges (parent, children, blockers, blocking, mentions, backlinks) and comments. Pass include: [\"events\"] for its latest 50 events.",
@@ -355,14 +351,13 @@ object Mcp:
       Render.issue
     ): (core, in, _, _, _) =>
       for
-        id <- lift(Requests.issueId(in.id))
         events <- lift(in.include.getOrElse(Nil) match
           case Nil            => Right(false)
           case List("events") => Right(true)
           case other          =>
             Left(DomainError.InvalidArgument("include", s"${other.mkString(", ")}: only events can be included")))
-        view <- call(core.get(id, events))
-      yield IssueOut.from(view),
+        view <- Operations.get(core, in.id, events)
+      yield view,
     tool(
       "create_issue",
       "Create an issue. Not idempotent: if a create may have failed, search before retrying. Unbound connections must name the project. Give at most one of rank, rank_before and rank_after.",
@@ -370,78 +365,49 @@ object Mcp:
       summon[Schema[WrittenOut]],
       Render.written
     ): (core, in, _, actor, project) =>
-      for
-        command <- lift(Requests.create(in))
-        written <- call(core.create(command, project, actor))
-      yield WrittenOut.from(written),
+      Operations.create(core, in, project, actor),
     issueTool(
       "update_issue",
       "Change an issue's title, body, labels, parent, blockers or rank, or just add a comment. body replaces the whole body; body_edits applies exact, unique {old, replacement} edits in order, all or nothing. Pass expected_version to refuse the write if the title, body or labels changed since you read them. parent: null clears the parent. The assignee is not changed here: use claim_issue, release_issue or reassign_issue.",
       summon[Schema[UpdateIn]],
       summon[Schema[WrittenOut]],
       Render.written
-    ): (core, id, in, actor) =>
-      for
-        command <- lift(Requests.update(in))
-        written <- call(core.update(id, command, actor))
-      yield WrittenOut.from(written),
+    )(Operations.update),
     issueTool(
       "claim_issue",
       "Take an unclaimed issue before working on it. The assignee must name your session, not just you (for example saqib/wf-7f3a): claiming what you already hold succeeds, so two sessions sharing a name would both think they won. Fails with claim_conflict if someone else holds it.",
       summon[Schema[ClaimIn]],
       summon[Schema[ClaimedOut]],
       Render.claimed
-    ): (core, id, in, actor) =>
-      for
-        who <- lift(Requests.assignee("assignee", in.assignee))
-        claimed <- call(core.claim(id, who, in.comment, actor))
-      yield ClaimedOut.from(claimed),
+    )(Operations.claim),
     issueTool(
       "release_issue",
       "Give back an issue you hold, for example when you are blocked. Name yourself as the assignee, exactly as you claimed it.",
       summon[Schema[ClaimIn]],
       summon[Schema[RowOnly]],
       (out: RowOnly) => Render.row(out.row)
-    ): (core, id, in, actor) =>
-      for
-        who <- lift(Requests.assignee("assignee", in.assignee))
-        row <- call(core.release(id, who, in.comment, actor))
-      yield RowOnly(RowOut.from(row)),
+    )(Operations.release),
     issueTool(
       "reassign_issue",
       "Move an issue held by someone else, naming who you expect holds it now. Use none for nobody: reassigning to none clears a stale claim left by a session that ended.",
       summon[Schema[ReassignIn]],
       summon[Schema[RowOnly]],
       (out: RowOnly) => Render.row(out.row)
-    ): (core, id, in, actor) =>
-      for
-        from <- lift(Requests.holder("from", in.from))
-        to <- lift(Requests.holder("to", in.to))
-        row <- call(core.reassign(id, from, to, in.comment, actor))
-      yield RowOnly(RowOut.from(row)),
+    )(Operations.reassign),
     issueTool(
       "close_issue",
       "Close an issue as done (the work was carried out) or dropped (abandoned, obsolete or out of scope), with a comment saying why. Refused while it has open children, or as done while a blocker is open. Returns the issues this close unblocked.",
       summon[Schema[CloseIn]],
       summon[Schema[ClosedOutWire]],
       Render.closed
-    ): (core, id, in, actor) =>
-      for
-        resolution <- lift(Requests.resolution(in.resolution))
-        comment <- lift(Requests.requiredComment(in.comment))
-        closed <- call(core.close(id, resolution, comment, actor))
-      yield ClosedOutWire.from(closed),
+    )(Operations.close),
     issueTool(
       "reopen_issue",
       "Reopen a closed issue, with a comment saying why. Refused while its parent is closed, or while an issue it blocks is closed done.",
       summon[Schema[ReopenIn]],
       summon[Schema[WrittenOut]],
       Render.written
-    ): (core, id, in, actor) =>
-      for
-        comment <- lift(Requests.requiredComment(in.comment))
-        written <- call(core.reopen(id, comment, actor))
-      yield WrittenOut.from(written)
+    )(Operations.reopen)
   )
 
   private val toolList: Json = tools

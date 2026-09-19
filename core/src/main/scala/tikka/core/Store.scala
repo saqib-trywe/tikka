@@ -63,9 +63,7 @@ object Store:
     yield Resource.make(idle.take)(idle.offer)
 
   private def connection(url: String, writing: Boolean): Resource[IO, java.sql.Connection] =
-    Resource.make(IO.blocking(DriverManager.getConnection(url, properties(writing))))(open =>
-      IO.blocking(open.close())
-    )
+    Resource.make(IO.blocking(DriverManager.getConnection(url, properties(writing))))(open => IO.blocking(open.close()))
 
   private def properties(writing: Boolean): Properties =
     val properties = Properties()

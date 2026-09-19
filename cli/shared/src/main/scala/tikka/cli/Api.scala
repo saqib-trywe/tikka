@@ -10,6 +10,7 @@ import sttp.model.Uri
 import sttp.tapir.PublicEndpoint
 import sttp.tapir.client.sttp4.SttpClientInterpreter
 import tikka.shared.Endpoints
+import tikka.shared.Surface
 import tikka.shared.Render
 import tikka.shared.Wire.*
 
@@ -74,10 +75,16 @@ final class Api(backend: Backend[IO], settings: Settings, patience: FiniteDurati
 
   def createProject(body: ProjectIn): IO[Either[Failure, ProjectOut]] = call(Endpoints.createProject, body)
 
+  /** Built as a request rather than sent straight off, so every call can state which surface it is before it goes. The
+    * event log then records what this client said rather than what the daemon inferred from the request's shape.
+    */
   private def call[I, O](endpoint: PublicEndpoint[I, Endpoints.Failure, O, Any], input: I): IO[Either[Failure, O]] =
     interpreter
-      .toClientThrowDecodeFailures(endpoint, base, backend)
+      .toRequestThrowDecodeFailures(endpoint, base)
       .apply(input)
+      .header(Surface.header, Surface.Cli.value)
+      .send(backend)
+      .map(_.body)
       .timeoutAndForget(patience)
       .attempt
       .flatMap:

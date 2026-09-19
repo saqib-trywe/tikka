@@ -677,8 +677,8 @@ final class Core(store: Store, clock: Clock, changed: IO[Unit] = IO.unit):
       .flatMap(comments => Queries.indexIssue(key, title, body, comments))
 
   /** A page of rows, in a fixed number of queries rather than one set per row. A row needs four things the `issue`
-    * table does not hold — its labels, its parent's id, whether anything open blocks it, and when it was last touched
-    * — and asking for each of them a row at a time makes a 200-issue page cost eight hundred statements.
+    * table does not hold — its labels, its parent's id, whether anything open blocks it, and when it was last touched —
+    * and asking for each of them a row at a time makes a 200-issue page cost eight hundred statements.
     */
   private def rowsOf(records: List[IssueRecord]): ConnectionIO[List[Row]] =
     NonEmptyList.fromList(records.map(_.key)) match
