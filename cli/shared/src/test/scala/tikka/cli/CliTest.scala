@@ -4,6 +4,8 @@ import cats.effect.ExitCode
 import cats.effect.IO
 import munit.CatsEffectSuite
 import sttp.client4.SttpClientException
+import sttp.client4.impl.cats.CatsMonadAsyncError
+import sttp.client4.testing.BackendStub
 import tikka.shared.DaemonConfig
 import tikka.shared.ProjectKey
 import tikka.shared.Wire.RowOut
@@ -11,6 +13,7 @@ import tikka.shared.Wire.RowOut
 import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.Files
 import java.nio.file.Path
+import scala.concurrent.duration.*
 
 /** The CLI's own rules, needing no daemon: parsing, settings, ordering and the service definitions. Runs on the JVM and
   * on Scala Native.
@@ -186,3 +189,19 @@ class CliTest extends CatsEffectSuite:
   private def write(file: Path, text: String): Unit =
     Files.createDirectories(file.getParent)
     Files.write(file, text.getBytes(UTF_8)): Unit
+
+  // TIK-4's other face: a daemon that accepts the request and then goes quiet. Waiting forever is the one answer a
+  // command line must never give.
+  test("a daemon that takes a request and says nothing is reported rather than waited on"):
+    val settings = Settings(Path.of("."), DaemonConfig.default, None)
+    val silent = BackendStub[IO](CatsMonadAsyncError[IO]()).whenAnyRequest.thenRespondF(IO.never)
+    val api = Api(silent, settings, 50.millis)
+    for
+      outcome <- api.meta
+      recorded <- Recorded(Map.empty, Path.of("."))
+      code <- Output.failure(recorded.environment, json = false, outcome.left.getOrElse(fail("expected a failure")))
+      err <- recorded.err
+    yield
+      assertEquals(outcome, Left(Failure.Silent(settings.baseUrl, 50.millis)))
+      assertEquals(code, ExitCode(3))
+      assert(err.contains("did not answer within"), err)

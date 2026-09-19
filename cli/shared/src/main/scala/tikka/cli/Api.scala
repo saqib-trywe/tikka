@@ -13,6 +13,9 @@ import tikka.shared.Endpoints
 import tikka.shared.Render
 import tikka.shared.Wire.*
 
+import java.util.concurrent.TimeoutException
+import scala.concurrent.duration.*
+
 /** Why a command did not get its result. */
 enum Failure:
   /** The daemon refused the request, with the contract's error body. */
@@ -21,14 +24,26 @@ enum Failure:
   /** Nothing answered at the daemon's address. */
   case Unreachable(address: String)
 
+  /** The daemon took the request and then said nothing for long enough that waiting further is pointless. */
+  case Silent(address: String, waited: FiniteDuration)
+
 object Failure:
-  /** 1 for a domain rejection, 3 for an unreachable daemon; 2 (usage) is decided before any request is sent. */
+  /** 1 for a domain rejection, 3 for a daemon that cannot be reached or will not answer; 2 (usage) is decided before
+    * any request is sent.
+    */
   def exitCode(failure: Failure): ExitCode = failure match
     case Rejected(_)    => ExitCode(1)
     case Unreachable(_) => ExitCode(3)
+    case Silent(_, _)   => ExitCode(3)
 
-/** The daemon's HTTP API, through the tapir-derived client every surface shares. */
-final class Api(backend: Backend[IO], settings: Settings):
+/** The daemon's HTTP API, through the tapir-derived client every surface shares.
+  *
+  * Every call is bounded. The daemon is local and answers in milliseconds, so waiting longer than `patience` means
+  * something is wrong that waiting will not mend, and a command line that never returns is worse than one that says so.
+  * The wait is abandoned rather than cancelled: on Native the request sits in a C call that cannot be interrupted, and
+  * cancelling would wait for exactly the thing that has stopped responding.
+  */
+final class Api(backend: Backend[IO], settings: Settings, patience: FiniteDuration = Api.patience):
   private val interpreter = SttpClientInterpreter()
   private val base = Some(Uri.unsafeParse(settings.baseUrl))
   private val bound = settings.project.map(_.value)
@@ -63,14 +78,19 @@ final class Api(backend: Backend[IO], settings: Settings):
     interpreter
       .toClientThrowDecodeFailures(endpoint, base, backend)
       .apply(input)
+      .timeoutAndForget(patience)
       .attempt
       .flatMap:
         case Right(Right(value))                       => IO.pure(Right(value))
         case Right(Left((_, error)))                   => IO.pure(Left(Failure.Rejected(error)))
+        case Left(_: TimeoutException)                 => IO.pure(Left(Failure.Silent(settings.baseUrl, patience)))
         case Left(problem) if Api.unreachable(problem) => IO.pure(Left(Failure.Unreachable(settings.baseUrl)))
         case Left(problem)                             => IO.raiseError(problem)
 
 object Api:
+  /** Long enough that a busy local daemon is never cut off, short enough that nobody waits on a broken one. */
+  val patience: FiniteDuration = 10.seconds
+
   /** A refused connection is sttp's `ConnectException` on the JVM, but curl on Scala Native reports it as a plain
     * `RuntimeException` naming `COULDNT_CONNECT`. Both mean the daemon is not running.
     */
@@ -98,6 +118,9 @@ object Output:
       case Failure.Unreachable(address) =>
         s"tikka daemon is not reachable at $address. Start it with `tikka daemon start`, " +
           "or `tikka daemon install` if no service is installed."
+      case Failure.Silent(address, waited) =>
+        s"tikka daemon at $address did not answer within ${waited.toSeconds} seconds. " +
+          "Check `tikka daemon status` and its log with `tikka daemon logs`."
     environment.err(message).as(Failure.exitCode(failure))
 
   def handle[A: Encoder](environment: Environment, json: Boolean)(outcome: Either[Failure, A])(

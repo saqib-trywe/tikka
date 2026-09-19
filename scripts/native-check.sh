@@ -80,23 +80,12 @@ probe status daemon status
 probe search search ready
 cd - >/dev/null
 if [ "$total" -ne 0 ]; then
-  # Parked as TIK-4: on Linux a request occasionally hangs, then aborts. Reported here, not failed, until revisited.
-  if [ "$(uname -s)" = "Linux" ]; then
-    echo "warning: tikka hung or failed $total times (known Linux issue TIK-4, parked)"
-  else
-    echo "tikka hung or failed $total times"
-    exit 1
-  fi
+  echo "tikka hung or failed $total times"
+  exit 1
 fi
 
 # The budget from "Choose the CLI approach": search against a running daemon, under 100 ms at the median.
-# On Linux each timed run is bounded and a failed run tolerated, so the TIK-4 hang cannot stall or fail the gate; the
-# median still has to be under budget.
-if [ "$(uname -s)" = "Linux" ]; then
-  (cd "$repo" && GATE_IGNORE_FAILURES=1 "$OLDPWD/scripts/startup-gate.sh" 100 timeout 10 "$tikka" search ready)
-else
-  (cd "$repo" && "$OLDPWD/scripts/startup-gate.sh" 100 "$tikka" search ready)
-fi
+(cd "$repo" && "$OLDPWD/scripts/startup-gate.sh" 100 "$tikka" search ready)
 
 # Async stdin on Scala Native is the least-proven path, so a real request goes through it.
 request='{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"search_issues","arguments":{"query":"ready"},"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientCapabilities":{}}}}'

@@ -103,6 +103,32 @@ jobs:
         if: failure()
         run: cat target/native-check-home/daemon.log
 
+  # TIK-4 was a race between OpenSSL's atexit handler and a thread still running its TLS destructors: roughly one run
+  # in two hundred, so only repetition finds it. One pass of the check would have called the CLI healthy for months.
+  native-stress:
+    needs: jvm
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: sbt
+      - uses: sbt/setup-sbt@v1
+      - run: sudo apt-get update && sudo apt-get install -y libcurl4-openssl-dev libidn2-dev gdb
+      - uses: actions/download-artifact@v8
+        with:
+          name: tikka-daemon
+          path: target/dist
+      - name: Link the CLI as it ships
+        run: sbt cliRelease
+      - name: Stress the CLI against a real daemon
+        run: scripts/native-stress.sh "$(find target/out -path '*native*' -type f -name tikka)" target/dist/tikka-daemon.jar 200
+      - name: Daemon log
+        if: failure()
+        run: cat target/native-stress-home/daemon.log
+
   conformance:
     needs: jvm
     runs-on: ubuntu-24.04
