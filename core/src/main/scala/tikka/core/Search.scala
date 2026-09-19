@@ -157,12 +157,14 @@ private[core] object Search:
   /** A relative duration counts back from the daemon's clock; a bare date starts at midnight in the daemon's zone. */
   private def resolve(moment: Moment, now: Instant, zone: ZoneId): Either[DomainError, Timestamp] = moment match
     case Moment.Ago(amount, unit) =>
-      val unitOf = unit match
-        case TimeUnit.Minutes => ChronoUnit.MINUTES
-        case TimeUnit.Hours   => ChronoUnit.HOURS
-        case TimeUnit.Days    => ChronoUnit.DAYS
-        case TimeUnit.Weeks   => ChronoUnit.WEEKS
-      Right(Clock.render(now.minus(amount.toLong, unitOf)))
+      // An Instant knows nothing of weeks, and asking it for one throws, so a week is counted as the seven days it
+      // is. That is exact here: these are absolute durations, with no calendar to skew them.
+      val (multiplier, unitOf) = unit match
+        case TimeUnit.Minutes => (1L, ChronoUnit.MINUTES)
+        case TimeUnit.Hours   => (1L, ChronoUnit.HOURS)
+        case TimeUnit.Days    => (1L, ChronoUnit.DAYS)
+        case TimeUnit.Weeks   => (7L, ChronoUnit.DAYS)
+      Right(Clock.render(now.minus(amount.toLong * multiplier, unitOf)))
     case Moment.OnDate(text) =>
       Either
         .catchNonFatal(LocalDate.parse(text).atStartOfDay(zone).toInstant)
