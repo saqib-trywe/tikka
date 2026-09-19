@@ -121,11 +121,6 @@ back. Nothing is locked inside the database format.
   spec; [docs/build-plan.md](docs/build-plan.md) only orders the build.
 - [CLAUDE.md](CLAUDE.md) — conventions, for agents and people alike.
 
-## Licence
-
-[Apache-2.0](LICENSE). The macOS build ships libidn2, libunistring and libintl, which are LGPL; their terms travel
-in the archive beside them.
-
 ## Building
 
 ```sh
@@ -138,3 +133,8 @@ sbt daemon/assembly                                    # the daemon jar, web UI 
 CI runs the same on Linux and macOS, links the CLI natively on both, holds `tikka search` against a live daemon to
 a 100 ms budget, and stresses the CLI over hundreds of runs because the fault that cost the most here showed up
 about once in two hundred.
+
+## Licence
+
+[Apache-2.0](LICENSE). The macOS build ships libidn2, libunistring and libintl, which are LGPL; their terms travel
+in the archive beside them.
