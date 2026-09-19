@@ -84,5 +84,23 @@ case ":$PATH:" in
   *":$bin:"*) ;;
   *) echo "note: $bin is not on your PATH" ;;
 esac
-"$bin/tikka" --version
+# Proving it starts is part of installing it. On Linux the two system libraries are the usual reason it does not,
+# and the loader's own message names a file rather than a package.
+if ! "$bin/tikka" --version; then
+  echo "" >&2
+  echo "tikka is installed at $bin/tikka but will not start." >&2
+  case "$build" in
+    tikka-linux-*)
+      echo "It needs libcurl and libidn2:" >&2
+      echo "  Debian, Ubuntu:  sudo apt install libcurl4 libidn2-0" >&2
+      echo "  Fedora, RHEL:    sudo dnf install libcurl libidn2" >&2
+      echo "  Alpine:          apk add curl-dev libidn2" >&2
+      ;;
+    tikka-macos-*)
+      echo "This build carries its own libraries, so this is worth reporting:" >&2
+      echo "  https://github.com/$repo/issues" >&2
+      ;;
+  esac
+  exit 1
+fi
 echo "next: tikka daemon install (first time), or tikka daemon restart (after an upgrade)"
