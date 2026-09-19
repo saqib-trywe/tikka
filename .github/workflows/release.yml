@@ -31,6 +31,7 @@ jobs:
         run: |
           scripts/bundle-macos.sh "$(find target/out -path '*native*' -type f -name tikka)" \
             "target/release/tikka-macos-arm64"
+          cp LICENSE target/release/tikka-macos-arm64/
       - name: Archive
         run: |
           cd target/release
@@ -58,8 +59,13 @@ jobs:
         run: |
           mkdir -p target/release/tikka-linux-x86_64
           cp "$(find target/out -path '*native*' -type f -name tikka)" target/release/tikka-linux-x86_64/tikka
+          cp LICENSE target/release/tikka-linux-x86_64/
           ldd target/release/tikka-linux-x86_64/tikka
-          ldd target/release/tikka-linux-x86_64/tikka | awk '{print $1}' | sort >target/release/tikka-linux-x86_64/LIBRARIES
+          # What the binary itself asks for, not what those libraries go on to need: the transitive list reads as a
+          # shopping list of packages nobody has to install.
+          objdump -p target/release/tikka-linux-x86_64/tikka | awk '/NEEDED/{print $2}' | sort \
+            >target/release/tikka-linux-x86_64/LIBRARIES
+          cat target/release/tikka-linux-x86_64/LIBRARIES
           cd target/release
           tar -czf tikka-linux-x86_64.tar.gz tikka-linux-x86_64
       - uses: actions/upload-artifact@v7
