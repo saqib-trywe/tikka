@@ -17,18 +17,29 @@ Status: **0.1.0**, macOS and Linux. One daemon, four surfaces over one core — 
 
 ## Install
 
-Needs a JDK 21 or newer, [sbt](https://www.scala-sbt.org), and a C toolchain to link the CLI. The CLI links
-`libcurl` and `libidn2`, so on macOS `brew install libidn2` first; on Debian or Ubuntu,
-`apt install libcurl4-openssl-dev libidn2-dev`.
+```sh
+curl -fsSL https://raw.githubusercontent.com/saqib-trywe/tikka/main/scripts/get-tikka.sh | sh
+tikka daemon install          # a service that starts at login (launchd or systemd)
+```
+
+Builds exist for macOS on Apple silicon and Linux on x86-64; that is a deliberate limit, not an oversight. The
+script checks what it downloaded against the release's `SHA256SUMS` and refuses to install anything that does not
+match. The daemon runs on a JDK 21 or newer, which is the only thing you need to have already.
+
+The macOS archive carries the libraries it cannot assume are on your machine. The Linux binary expects `libcurl4`
+and `libidn2-0`, which most systems already have.
+
+### From source
+
+Anything else — an Intel Mac, a different architecture, or simply a preference — builds from source. Needs a JDK
+21 or newer, [sbt](https://www.scala-sbt.org), a C toolchain, and libcurl and libidn2 development packages
+(`brew install libidn2`, or `apt install libcurl4-openssl-dev libidn2-dev`).
 
 ```sh
 git clone https://github.com/saqib-trywe/tikka && cd tikka
-scripts/install.sh              # builds, then installs to ~/.local/bin/tikka and ~/.tikka/lib
-tikka daemon install            # a service that starts at login (launchd or systemd)
+scripts/install.sh            # builds, then installs to ~/.local/bin and ~/.tikka/lib
+tikka daemon install
 ```
-
-There is no packaged release: the install builds from source, which is a deliberate choice for a tool used by the
-person who builds it.
 
 ## Use it
 

@@ -1,0 +1,133 @@
+name: Release
+
+# A tag publishes; a manual run builds the same artifacts and keeps them on the run, so the workflow can be proved
+# without spending a version number on it.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  JAVA_VERSION: "21"
+
+jobs:
+  macos:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: sbt
+      - uses: sbt/setup-sbt@v1
+      - run: brew install libidn2
+      - run: sbt cliRelease
+      # The binary links libidn2 by absolute path, and that path exists on no machine but a Homebrew one.
+      - name: Bundle the libraries it cannot assume
+        run: |
+          scripts/bundle-macos.sh "$(find target/out -path '*native*' -type f -name tikka)" \
+            "target/release/tikka-macos-arm64"
+      - name: Archive
+        run: |
+          cd target/release
+          tar -czf tikka-macos-arm64.tar.gz tikka-macos-arm64
+      - uses: actions/upload-artifact@v7
+        with:
+          name: tikka-macos-arm64
+          path: target/release/tikka-macos-arm64.tar.gz
+
+  linux:
+    # Built on the oldest supported glibc rather than the newest: a binary built on 24.04 will not start on Debian 12
+    # or Ubuntu 22.04, and the reverse is fine. CI still tests on 24.04.
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: sbt
+      - uses: sbt/setup-sbt@v1
+      - run: sudo apt-get update && sudo apt-get install -y libcurl4-openssl-dev libidn2-dev
+      - run: sbt cliRelease
+      - name: Archive, and record what it expects to find
+        run: |
+          mkdir -p target/release/tikka-linux-x86_64
+          cp "$(find target/out -path '*native*' -type f -name tikka)" target/release/tikka-linux-x86_64/tikka
+          ldd target/release/tikka-linux-x86_64/tikka
+          ldd target/release/tikka-linux-x86_64/tikka | awk '{print $1}' | sort >target/release/tikka-linux-x86_64/LIBRARIES
+          cd target/release
+          tar -czf tikka-linux-x86_64.tar.gz tikka-linux-x86_64
+      - uses: actions/upload-artifact@v7
+        with:
+          name: tikka-linux-x86_64
+          path: target/release/tikka-linux-x86_64.tar.gz
+
+  jar:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: sbt
+      - uses: sbt/setup-sbt@v1
+      - run: sbt daemon/assembly
+      - name: The jar carries the web UI and runs
+        run: |
+          unzip -l target/dist/tikka-daemon.jar | grep -q ' ui/main.js$'
+          java --enable-native-access=ALL-UNNAMED -jar target/dist/tikka-daemon.jar --version
+      - uses: actions/upload-artifact@v7
+        with:
+          name: tikka-daemon
+          path: target/dist/tikka-daemon.jar
+
+  publish:
+    needs: [macos, linux, jar]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+      - name: Gather and check
+        run: |
+          mkdir -p release
+          mv artifacts/tikka-macos-arm64/tikka-macos-arm64.tar.gz release/
+          mv artifacts/tikka-linux-x86_64/tikka-linux-x86_64.tar.gz release/
+          mv artifacts/tikka-daemon/tikka-daemon.jar release/
+          cd release
+          sha256sum * >SHA256SUMS
+          cat SHA256SUMS
+      - name: Write the notes
+        run: |
+          cat >notes.md <<'NOTES'
+          Install with the script, which picks the right build, checks the hash, and puts each piece where the daemon
+          expects it:
+
+          ```sh
+          curl -fsSL https://raw.githubusercontent.com/saqib-trywe/tikka/main/scripts/get-tikka.sh | sh
+          tikka daemon install
+          ```
+
+          Builds for macOS on Apple silicon and Linux on x86-64, which is a deliberate limit rather than an oversight.
+          The macOS archive carries the libraries it cannot assume are there; the Linux binary expects `libcurl4` and
+          `libidn2-0`, which most systems already have. The daemon runs on a JDK 21 or newer.
+
+          The binaries are signed ad-hoc, not with a Developer ID. A download made by curl runs as it is; one made by a
+          browser is quarantined by macOS, and `xattr -dr com.apple.quarantine` on the extracted directory clears that.
+
+          Check what you downloaded against `SHA256SUMS`.
+          NOTES
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" release/* \
+            --title "tikka ${GITHUB_REF_NAME#v}" --notes-file notes.md
