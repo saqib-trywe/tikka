@@ -159,7 +159,12 @@ class SearchTest extends TempHome, Builders:
         claimed <- core.find("claimed-after:1h")
         stale <- core.find("claimed-before:1h")
         updated <- core.find("updated-after:30m")
+        // A week is a unit the parser accepts and its own error message advertises, so it has to reach the store.
+        weekly <- core.find("updated-after:1w")
+        lastWeek <- core.find("created-before:2w")
       yield
+        assertEquals(weekly, List(issue))
+        assertEquals(lastWeek, Nil)
         assertEquals(recent, List(issue))
         assertEquals(old, Nil)
         assertEquals(claimed, List(issue))
